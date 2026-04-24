@@ -1,0 +1,139 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@layer base {
+  :root {
+    --flame:        #F9761C;
+    --flame-dark:   #C95A0C;
+    --flame-deep:   #7C2D12;
+    --flame-mid:    #FBA05A;
+    --flame-glow:   #FFEAE0;
+    --magenta:      #EC4799;
+    --magenta-dark: #C0277A;
+    --magenta-tint: #FDE4F0;
+    --cobalt:       #3D84F6;
+    --cobalt-dark:  #2563D8;
+    --cobalt-tint:  #E3ECFE;
+    --green:        #36C665;
+    --green-tint:   #E3F7E7;
+    --canvas:       #FDFAF7;
+    --surface:      #F5F0EB;
+    --border:       #E7E0D8;
+    --ink:          #1C1917;
+  }
+
+  * {
+    border-color: theme('colors.border');
+  }
+
+  body {
+    @apply bg-canvas text-ink font-sans antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Focus ring */
+  :focus-visible {
+    @apply outline-none ring-2 ring-flame ring-offset-2;
+  }
+}
+
+@layer components {
+  /* Typography */
+  .text-display {
+    @apply font-serif text-5xl font-bold leading-tight tracking-tight;
+  }
+  .text-heading {
+    @apply font-serif text-3xl font-bold leading-snug;
+  }
+  .text-title {
+    @apply font-serif text-xl font-semibold leading-snug;
+  }
+  .text-quote {
+    @apply font-serif text-lg italic leading-relaxed;
+  }
+  .text-eyebrow {
+    @apply text-[11px] font-semibold uppercase tracking-[2px] text-flame;
+  }
+
+  /* Card base */
+  .card {
+    @apply bg-white rounded-lg border border-[#E7E0D8] shadow-sm;
+  }
+
+  /* Genre badge */
+  .genre-badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full
+           text-xs font-semibold border-[1.5px];
+  }
+  .genre-adventure     { @apply bg-flame-glow border-flame text-flame-dark; }
+  .genre-drama         { @apply bg-magenta-tint border-magenta text-magenta-dark; }
+  .genre-comedy        { @apply bg-[#FFF8E1] border-[#FFCA28] text-[#7B5800]; }
+  .genre-romance       { @apply bg-[#FFEBEE] border-vivid-red text-[#8B1A1A]; }
+  .genre-coming-of-age { @apply bg-vivid-green-tint border-vivid-green text-[#1B5E20]; }
+  .genre-documentary   { @apply bg-cobalt-tint border-cobalt text-cobalt-dark; }
+
+  /* Button base */
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5
+           font-semibold transition-all duration-150
+           focus-visible:ring-2 focus-visible:ring-offset-2
+           disabled:opacity-50 disabled:pointer-events-none;
+  }
+  .btn-sm  { @apply h-8  px-3.5 text-[13px] rounded-sm; }
+  .btn-md  { @apply h-10 px-4   text-sm    rounded-md; }
+  .btn-lg  { @apply h-12 px-5   text-[15px] rounded-md; }
+  .btn-xl  { @apply h-14 px-7   text-base  rounded-lg; }
+
+  .btn-primary  { @apply bg-flame text-white shadow-[0_2px_8px_rgba(249,118,28,0.35)] hover:bg-flame-dark; }
+  .btn-secondary{ @apply bg-white text-ink border border-[#E7E0D8] shadow-sm hover:border-ink-soft; }
+  .btn-ghost    { @apply bg-flame-glow text-flame hover:bg-[#FFD8C0]; }
+  .btn-dark     { @apply bg-ink text-white hover:bg-ink-mid; }
+  .btn-magenta  { @apply bg-magenta text-white shadow-[0_2px_8px_rgba(236,71,153,0.32)] hover:bg-magenta-dark; }
+  .btn-cobalt   { @apply bg-cobalt text-white shadow-[0_2px_8px_rgba(61,132,246,0.28)] hover:bg-cobalt-dark; }
+  .btn-pill     { @apply !rounded-full; }
+
+  /* Photo action button (delete / caption on media items) */
+  .photo-action-btn {
+    @apply w-6 h-6 rounded-full bg-black/60 backdrop-blur-sm
+           flex items-center justify-center text-white
+           hover:bg-flame transition-colors cursor-pointer;
+  }
+
+  /* Input base */
+  .input {
+    @apply w-full h-10 bg-white border border-[#E7E0D8] rounded-md
+           px-3.5 font-sans text-sm text-ink placeholder-ink-faint
+           shadow-sm transition-all duration-150
+           focus:outline-none focus:border-flame focus:ring-2 focus:ring-flame/15;
+  }
+
+  /* Reaction button */
+  .reaction {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full
+           border-[1.5px] border-[#E7E0D8] bg-white text-xs text-ink-soft
+           shadow-sm cursor-pointer transition-all duration-150;
+  }
+  .reaction.active {
+    @apply bg-magenta-tint border-magenta text-magenta-dark font-semibold;
+  }
+}
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+
+  /* Photo gradient background (fallback when no image) */
+  .photo-gradient {
+    background: linear-gradient(135deg, #F9761C 0%, #EC4799 60%, #C0277A 100%);
+  }
+  .photo-gradient-alt {
+    background: linear-gradient(160deg, #F9761C 0%, #EC4799 55%, #3D84F6 100%);
+  }
+}

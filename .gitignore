@@ -1,0 +1,10 @@
+# Dependencies
+app/node_modules/
+app/.next/
+
+# Environment — never commit secrets
+app/.env.local
+app/.env*.local
+
+# macOS
+.DS_Store
