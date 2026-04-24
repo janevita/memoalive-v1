@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { useFormState, useFormStatus } from 'react-dom'
 import { signIn } from '@/lib/actions/auth'
 import { ROUTES } from '@/lib/constants'
+import { Suspense } from 'react'
 
 function SubmitButton() {
   const { pending } = useFormStatus()
@@ -15,7 +16,7 @@ function SubmitButton() {
   )
 }
 
-export default function LoginPage() {
+function LoginForm() {
   const [state, action] = useFormState(signIn, undefined)
   const searchParams = useSearchParams()
   const inviteCode   = searchParams.get('invite')
@@ -65,5 +66,13 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   )
 }
