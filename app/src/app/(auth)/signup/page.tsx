@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { useFormState, useFormStatus } from 'react-dom'
 import { signUp } from '@/lib/actions/auth'
 import { ROUTES } from '@/lib/constants'
+import { Suspense } from 'react'
 
 function SubmitButton() {
   const { pending } = useFormStatus()
@@ -15,7 +16,7 @@ function SubmitButton() {
   )
 }
 
-export default function SignupPage() {
+function SignupForm() {
   const [state, action] = useFormState(signUp, undefined)
   const searchParams = useSearchParams()
   const inviteCode   = searchParams.get('invite')
@@ -42,7 +43,6 @@ export default function SignupPage() {
               {state.error}
             </div>
           )}
-          {/* Pass invite code through to the action */}
           {inviteCode && <input type="hidden" name="inviteCode" value={inviteCode} />}
           <div>
             <label className="block text-xs font-semibold text-ink-mid mb-1.5">Your name</label>
@@ -73,5 +73,13 @@ export default function SignupPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense>
+      <SignupForm />
+    </Suspense>
   )
 }
