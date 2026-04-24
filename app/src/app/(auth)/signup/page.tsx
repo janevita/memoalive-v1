@@ -36,7 +36,6 @@ function SignupForm() {
               : 'Start keeping memories with your people'}
           </p>
         </div>
-
         <form action={action} className="space-y-4">
           {state?.error && (
             <div className="rounded-xl bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-600">
@@ -61,7 +60,6 @@ function SignupForm() {
           </div>
           <SubmitButton />
         </form>
-
         <p className="mt-6 text-center text-sm text-ink-soft">
           Already have an account?{' '}
           <Link
