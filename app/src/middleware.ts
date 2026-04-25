@@ -1,28 +1,26 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    return NextResponse.next({ request: { headers: request.headers } })
-  }
-
 const PROTECTED_PREFIXES = ['/dashboard', '/memories/new', '/events/new', '/search', '/profile', '/import', '/scrapbooks']
 const AUTH_ROUTES = ['/login', '/signup']
 
-// Shared scrapbook view — public, no auth required
 const SCRAPBOOK_SHARE_RE = /^\/scrapbooks\/s\//
-// Memory detail pages — semi-public
 const MEMORY_DETAIL_RE   = /^\/events\/[^/]+\/memories\/[^/]+/
-// Event pages other than /events/new are also semi-public
 const GROUP_PAGE_RE      = /^\/events\/[^/]+(\/.*)?$/
 const JOIN_RE            = /^\/join\//
 
 export async function middleware(request: NextRequest) {
+  // If env vars are missing, skip auth checks gracefully
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return NextResponse.next({ request: { headers: request.headers } })
+  }
+
   let response = NextResponse.next({ request: { headers: request.headers } })
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabase = createServerClient<any>(
-   process.env.NEXT_PUBLIC_SUPABASE_URL,
-   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
         getAll() {
@@ -49,14 +47,12 @@ export async function middleware(request: NextRequest) {
     && !JOIN_RE.test(pathname)
   const isAuthRoute = AUTH_ROUTES.some(route => pathname.startsWith(route))
 
-  // Redirect unauthenticated users away from protected routes
   if (isProtected && !user) {
     const redirectUrl = new URL('/login', request.url)
     redirectUrl.searchParams.set('redirect', pathname)
     return NextResponse.redirect(redirectUrl)
   }
 
-  // Redirect authenticated users away from auth routes
   if (isAuthRoute && user) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
@@ -66,13 +62,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimisation)
-     * - favicon.ico
-     * - public folder files
-     */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
