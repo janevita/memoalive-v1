@@ -65,10 +65,10 @@ function ScrapbookIcon({ className }: { className?: string }) {
 function LogoMark() {
   return (
     <div
-      className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-      style={{ background: 'linear-gradient(135deg, #F9761C, #EC4799)' }}
+      className="w-8 h-8 flex items-center justify-center flex-shrink-0"
+      style={{ background: 'linear-gradient(135deg, #FF5C1A, #FF2D78)', border: '2px solid #B53C00', boxShadow: '2px 2px 0 #B53C00' }}
     >
-      <div className="w-[11px] h-[11px] rounded-full border-[1.5px] border-white/85" />
+      <div className="w-[11px] h-[11px] border-[2px] border-white/90" />
     </div>
   )
 }
@@ -87,15 +87,15 @@ export function Nav() {
   return (
     <>
       {/* Desktop top nav */}
-      <header className="hidden md:flex items-center justify-between px-8 py-4 border-b border-ink/8 bg-canvas/95 backdrop-blur-sm sticky top-0 z-50">
+      <header className="hidden md:flex items-center justify-between px-8 py-4 bg-canvas sticky top-0 z-50" style={{ borderBottom: '2.5px solid #1C1917' }}>
         <Link href={ROUTES.dashboard} className="flex items-center gap-2.5">
           <LogoMark />
           <span className="font-serif text-xl font-bold text-ink">
-            Memo<span className="text-flame">alive</span>
+            Memo<span className="text-sunrise">alive</span>
           </span>
         </Link>
 
-        <nav className="flex items-center gap-1">
+        <nav className="flex items-center gap-2">
           {navItems.filter(i => !i.primary).map(({ href, label, icon: Icon }) => {
             const active = pathname === href || pathname.startsWith(href + '/')
             return (
@@ -103,11 +103,15 @@ export function Nav() {
                 key={href}
                 href={href}
                 className={cn(
-                  'flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors',
+                  'flex items-center gap-1.5 px-4 py-2 text-sm font-semibold transition-all',
                   active
-                    ? 'bg-flame-glow text-flame'
-                    : 'text-ink-soft hover:text-ink hover:bg-ink/5'
+                    ? 'bg-sunrise text-white'
+                    : 'text-ink hover:bg-surface'
                 )}
+                style={active
+                  ? { border: '2px solid #B53C00', boxShadow: '2px 2px 0 #B53C00' }
+                  : { border: '2px solid #1C1917', boxShadow: '2px 2px 0 #1C1917' }
+                }
               >
                 <Icon className="w-4 h-4" />
                 {label}
@@ -116,7 +120,7 @@ export function Nav() {
           })}
           <Link
             href={ROUTES.newMemory}
-            className="btn btn-primary btn-sm btn-pill ml-2"
+            className="btn btn-primary btn-sm ml-2"
           >
             <PlusIcon className="w-3.5 h-3.5" />
             Add memory
@@ -125,17 +129,17 @@ export function Nav() {
       </header>
 
       {/* Mobile top bar */}
-      <header className="md:hidden flex items-center justify-between px-5 py-3 border-b border-ink/8 bg-canvas/95 backdrop-blur-sm sticky top-0 z-50">
+      <header className="md:hidden flex items-center justify-between px-5 py-3 bg-canvas sticky top-0 z-50" style={{ borderBottom: '2.5px solid #1C1917' }}>
         <Link href={ROUTES.dashboard} className="flex items-center gap-2">
           <LogoMark />
           <span className="font-serif text-lg font-bold text-ink">
-            Memo<span className="text-flame">alive</span>
+            Memo<span className="text-sunrise">alive</span>
           </span>
         </Link>
       </header>
 
       {/* Mobile bottom nav */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-canvas/95 backdrop-blur-sm border-t border-ink/8 flex items-stretch">
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-canvas flex items-stretch" style={{ borderTop: '2.5px solid #1C1917' }}>
         {navItems.map(({ href, label, icon: Icon, primary }) => {
           const active = pathname === href || pathname.startsWith(href + '/')
           if (primary) {
@@ -145,7 +149,10 @@ export function Nav() {
                 href={href}
                 className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5"
               >
-                <div className="w-10 h-10 rounded-full bg-flame flex items-center justify-center shadow-md">
+                <div
+                  className="w-10 h-10 flex items-center justify-center"
+                  style={{ background: '#FF5C1A', border: '2px solid #B53C00', boxShadow: '0 3px 0 #B53C00' }}
+                >
                   <Icon className="w-5 h-5 text-white" />
                 </div>
               </Link>
@@ -157,16 +164,15 @@ export function Nav() {
               href={href}
               className={cn(
                 'flex-1 flex flex-col items-center justify-center py-2 gap-0.5 transition-colors',
-                active ? 'text-flame' : 'text-ink-soft'
+                active ? 'text-sunrise' : 'text-ink-soft'
               )}
             >
               <Icon className="w-5 h-5" />
-              <span className="text-[10px] font-medium">{label}</span>
+              <span className="text-[10px] font-semibold">{label}</span>
             </Link>
           )
         })}
-        {/* Safe-area spacer */}
-        <div className="absolute bottom-0 inset-x-0 h-safe-bottom bg-canvas/95" />
+        <div className="absolute bottom-0 inset-x-0 h-safe-bottom bg-canvas" />
       </nav>
 
       {/* Mobile bottom nav clearance */}

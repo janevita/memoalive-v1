@@ -21,32 +21,39 @@ const config: Config = {
     extend: {
       colors: {
         // ── Core Brand ──
-        flame: {
-          DEFAULT: '#F9761C',
-          dark:    '#C95A0C',
-          deep:    '#7C2D12',
-          mid:     '#FBA05A',
-          glow:    '#FFEAE0',
-          warm:    '#FEE0CC',
+        sunrise: {
+          DEFAULT: '#FF5C1A',
+          dark:    '#B53C00',
+          mid:     '#FF8A4C',
+          glow:    '#FFF0E8',
+          warm:    '#FFD4B8',
         },
-        // ── Vibrant Accents ──
-        magenta: {
-          DEFAULT: '#EC4799',
-          dark:    '#C0277A',
-          tint:    '#FDE4F0',
+        golden: {
+          DEFAULT: '#FFAA00',
+          dark:    '#B57500',
+          mid:     '#FFCC44',
+          glow:    '#FFF5D6',
         },
-        cobalt: {
-          DEFAULT: '#3D84F6',
-          dark:    '#2563D8',
-          tint:    '#E3ECFE',
+        blossom: {
+          DEFAULT: '#FF2D78',
+          dark:    '#B5005A',
+          mid:     '#FF6FA0',
+          glow:    '#FFE8F0',
         },
-        vivid: {
-          green:      '#36C665',
-          'green-tint': '#E3F7E7',
-          red:        '#DF3736',
-          'blush':    '#FBE1DF',
-          amber:      '#FFCA28',
-          'amber-tint': '#FFF8E1',
+        sky: {
+          DEFAULT: '#2E90FA',
+          dark:    '#1A6BC4',
+          glow:    '#E8F4FF',
+        },
+        sage: {
+          DEFAULT: '#12B76A',
+          dark:    '#0D7A3B',
+          glow:    '#E8FAF0',
+        },
+        dusk: {
+          DEFAULT: '#8B5CF6',
+          dark:    '#5B2DC0',
+          glow:    '#F0EAFF',
         },
         // ── Warm Neutrals ──
         ink: {
@@ -55,17 +62,44 @@ const config: Config = {
           soft:    '#78716C',
           faint:   '#A8A29E',
         },
-        border:  '#E7E0D8',
-        surface: '#F5F0EB',
-        canvas:  '#FDFAF7',
+        border:  '#D4CCC4',
+        surface: '#F5F0EA',
+        canvas:  '#FFFBF5',
         // ── Genre colours ──
         genre: {
-          adventure: '#F9761C',
-          drama:     '#EC4799',
-          comedy:    '#FFCA28',
-          romance:   '#DF3736',
-          coming:    '#36C665',
-          doc:       '#3D84F6',
+          adventure: '#FF5C1A',
+          drama:     '#FF2D78',
+          comedy:    '#FFAA00',
+          romance:   '#8B5CF6',
+          coming:    '#12B76A',
+          doc:       '#2E90FA',
+        },
+        // ── Legacy aliases (keep for any hardcoded refs) ──
+        flame: {
+          DEFAULT: '#FF5C1A',
+          dark:    '#B53C00',
+          deep:    '#7C2D12',
+          mid:     '#FF8A4C',
+          glow:    '#FFF0E8',
+          warm:    '#FFD4B8',
+        },
+        magenta: {
+          DEFAULT: '#FF2D78',
+          dark:    '#B5005A',
+          tint:    '#FFE8F0',
+        },
+        cobalt: {
+          DEFAULT: '#2E90FA',
+          dark:    '#1A6BC4',
+          tint:    '#E8F4FF',
+        },
+        vivid: {
+          green:        '#12B76A',
+          'green-tint': '#E8FAF0',
+          red:          '#DF3736',
+          blush:        '#FBE1DF',
+          amber:        '#FFAA00',
+          'amber-tint': '#FFF5D6',
         },
       },
       fontFamily: {
@@ -73,22 +107,34 @@ const config: Config = {
         sans:  ['Inter', '-apple-system', 'sans-serif'],
       },
       borderRadius: {
-        sm:   '6px',
-        md:   '10px',
-        lg:   '16px',
-        xl:   '24px',
-        full: '9999px',
+        // Plastic toy: sharp corners everywhere
+        sm:   '0px',
+        md:   '0px',
+        lg:   '0px',
+        xl:   '0px',
+        full: '9999px',   // kept only for circular avatars / explicit pills
       },
       boxShadow: {
-        sm:    '0 1px 3px rgba(100,60,20,0.08), 0 1px 2px rgba(100,60,20,0.04)',
-        md:    '0 4px 12px rgba(100,60,20,0.10), 0 2px 4px rgba(100,60,20,0.05)',
-        lg:    '0 12px 32px rgba(100,60,20,0.12), 0 4px 8px rgba(100,60,20,0.06)',
-        photo: '0 8px 24px rgba(100,60,20,0.18)',
+        // 3D plastic offset shadows — hard, no blur
+        sm:      '2px 2px 0 #1C1917',
+        md:      '3px 3px 0 #1C1917',
+        lg:      '4px 4px 0 #1C1917',
+        photo:   '4px 4px 0 rgba(0,0,0,0.40)',
+        // Button bottom-drop variants (apply via arbitrary value in JSX or component class)
+        sunrise: '0 4px 0 #B53C00',
+        golden:  '0 4px 0 #B57500',
+        blossom: '0 4px 0 #B5005A',
+        sky:     '0 4px 0 #1A6BC4',
+        sage:    '0 4px 0 #0D7A3B',
+        dusk:    '0 4px 0 #5B2DC0',
+        dark:    '0 4px 0 #000000',
       },
       backgroundImage: {
-        'gradient-brand':    'linear-gradient(135deg, #F9761C, #EC4799)',
-        'gradient-cinematic':'linear-gradient(160deg, #F9761C 0%, #EC4799 55%, #3D84F6 100%)',
-        'gradient-green':    'linear-gradient(135deg, #3D84F6, #36C665)',
+        'gradient-brand':  'linear-gradient(135deg, #FF5C1A, #FF2D78)',
+        'gradient-sunny':  'linear-gradient(135deg, #FF5C1A, #FFAA00)',
+        'gradient-sky':    'linear-gradient(135deg, #2E90FA, #8B5CF6)',
+        'gradient-cinematic': 'linear-gradient(160deg, #FF5C1A 0%, #FF2D78 55%, #8B5CF6 100%)',
+        'gradient-green':  'linear-gradient(135deg, #2E90FA, #12B76A)',
       },
     },
   },

@@ -6,19 +6,23 @@ export default function LandingPage() {
     <main className="min-h-screen bg-ink flex flex-col items-center justify-center px-6 relative overflow-hidden">
       {/* Colour blobs */}
       <div className="absolute top-[-80px] right-[-80px] w-[400px] h-[400px] rounded-full pointer-events-none"
-           style={{ background: 'radial-gradient(circle, rgba(236,71,153,0.22) 0%, rgba(249,118,28,0.10) 50%, transparent 70%)' }} />
+           style={{ background: 'radial-gradient(circle, rgba(255,92,26,0.30) 0%, rgba(255,45,120,0.12) 50%, transparent 70%)' }} />
       <div className="absolute bottom-[-100px] left-[10%] w-[320px] h-[320px] rounded-full pointer-events-none"
-           style={{ background: 'radial-gradient(circle, rgba(61,132,246,0.16) 0%, rgba(54,198,101,0.08) 60%, transparent 75%)' }} />
+           style={{ background: 'radial-gradient(circle, rgba(139,92,246,0.20) 0%, rgba(46,144,250,0.10) 60%, transparent 75%)' }} />
+      <div className="absolute top-[30%] left-[-60px] w-[240px] h-[240px] rounded-full pointer-events-none"
+           style={{ background: 'radial-gradient(circle, rgba(255,170,0,0.18) 0%, transparent 70%)' }} />
 
       {/* Logo */}
       <div className="relative z-10 text-center mb-10">
         <div className="flex items-center justify-center gap-4 mb-6">
-          <div className="w-14 h-14 rounded-full flex items-center justify-center relative flex-shrink-0"
-               style={{ background: 'linear-gradient(135deg, #F9761C, #EC4799)' }}>
-            <div className="w-[22px] h-[22px] rounded-full border-[2.5px] border-white/85 absolute" />
+          <div
+            className="w-14 h-14 flex items-center justify-center relative flex-shrink-0"
+            style={{ background: 'linear-gradient(135deg, #FF5C1A, #FF2D78)', border: '3px solid #B53C00', boxShadow: '4px 4px 0 #B53C00' }}
+          >
+            <div className="w-[22px] h-[22px] border-[3px] border-white/85" />
           </div>
           <h1 className="font-serif text-6xl font-bold text-white tracking-tight leading-none">
-            Memo<span className="text-flame">alive</span>
+            Memo<span className="text-sunrise">alive</span>
           </h1>
         </div>
         <p className="font-serif text-xl italic text-white/60 leading-snug">
@@ -30,14 +34,14 @@ export default function LandingPage() {
       <div className="relative z-10 flex flex-col sm:flex-row gap-4">
         <Link
           href={ROUTES.signup}
-          className="btn btn-primary btn-xl btn-pill"
+          className="btn btn-primary btn-xl"
         >
           Get started — it's free
         </Link>
         <Link
           href={ROUTES.login}
-          className="btn btn-secondary btn-xl btn-pill"
-          style={{ background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.15)', color: 'white' }}
+          className="btn btn-xl"
+          style={{ background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.30)', color: 'white', boxShadow: '0 4px 0 rgba(255,255,255,0.15)' }}
         >
           Sign in
         </Link>
