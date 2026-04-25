@@ -673,6 +673,7 @@ export function ScrapbookCanvas({ scrapbook, isOwner, pickablePhotos }: Props) {
                         isEditing={editingTextId === el.id}
                         isOwner={isOwner}
                         tplColor={TEMPLATE_TEXT_COLOR[templateId] ?? '#1A1A1A'}
+                        tpl={{ slotBg: tpl.slotBg, slotBorder: tpl.slotBorder }}
                         onSelect={() => setSelectedId(el.id)}
                         onDragStart={(e, mode) => startDrag(e, el, mode)}
                         onPointerMove={e => handlePointerMove(e, el)}
@@ -683,6 +684,7 @@ export function ScrapbookCanvas({ scrapbook, isOwner, pickablePhotos }: Props) {
                         onTextSave={text => handleTextSave(el, text)}
                         onStyleChange={style => handleStyleSave(el, style)}
                         onFrameChange={frameStyle => handleFrameChange(el, frameStyle)}
+                        onOpenPhotoPicker={id => { setTargetSlotId(id); setShowPhotoPicker(true) }}
                       />
                     ))}
                   </div>
@@ -806,12 +808,15 @@ interface DraggableElementProps {
   onTextSave: (text: string) => void
   onStyleChange: (style: Partial<ElementStyle>) => void
   onFrameChange: (frameStyle: string) => void
+  onOpenPhotoPicker?: (slotId: string) => void
+  tpl: { slotBg?: string; slotBorder?: string }
 }
 
 function DraggableElement({
-  el, isSelected, isEditing, isOwner, tplColor,
+  el, isSelected, isEditing, isOwner, tplColor, tpl,
   onSelect, onDragStart, onPointerMove, onPointerUp,
   onDelete, onStartTextEdit, onTextSave, onStyleChange, onFrameChange,
+  onOpenPhotoPicker,
 }: DraggableElementProps) {
   const textRef = useRef<HTMLDivElement>(null)
 
@@ -851,8 +856,7 @@ function DraggableElement({
             <div
               onClick={isOwner ? (e) => {
                 e.stopPropagation()
-                setTargetSlotId(el.id)
-                setShowPhotoPicker(true)
+                onOpenPhotoPicker?.(el.id)
               } : undefined}
               style={{
                 width: '100%', height: '100%',
