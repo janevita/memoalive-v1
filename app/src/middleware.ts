@@ -1,6 +1,10 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return NextResponse.next({ request: { headers: request.headers } })
+  }
+
 const PROTECTED_PREFIXES = ['/dashboard', '/memories/new', '/events/new', '/search', '/profile', '/import', '/scrapbooks']
 const AUTH_ROUTES = ['/login', '/signup']
 
@@ -17,8 +21,8 @@ export async function middleware(request: NextRequest) {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabase = createServerClient<any>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+   process.env.NEXT_PUBLIC_SUPABASE_URL,
+   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
         getAll() {
