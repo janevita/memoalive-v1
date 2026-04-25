@@ -28,7 +28,7 @@ export function TemplatePicker({ value, onChange, name = 'template' }: Props) {
             className={[
               'rounded-2xl overflow-hidden border-2 transition-all text-left focus:outline-none',
               value === t.id
-                ? 'border-flame shadow-[0_0_0_3px_rgba(249,118,28,0.2)] scale-[1.02]'
+                ? 'border-sunrise shadow-[0_0_0_3px_rgba(255,92,26,0.2)] scale-[1.02]'
                 : 'border-ink/8 hover:border-ink/20 hover:scale-[1.01]',
             ].join(' ')}
           >
@@ -43,7 +43,7 @@ export function TemplatePicker({ value, onChange, name = 'template' }: Props) {
 
             {/* Checkmark */}
             {value === t.id && (
-              <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-flame flex items-center justify-center shadow-sm">
+              <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-sunrise flex items-center justify-center shadow-sm">
                 <svg viewBox="0 0 24 24" className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
@@ -191,6 +191,90 @@ function TemplatePreview({ id }: { id: ScrapbookTemplateId }) {
           </div>
           {/* Bottom bar */}
           <div className="absolute bottom-0 inset-x-0" style={{ height:'4px', background:'linear-gradient(90deg,#C8A040,#F0C060,#C8A040)', opacity:0.6 }} />
+        </div>
+      )
+
+    case 'neon-pop':
+      return (
+        <div className={base} style={{
+          background: '#0D0D14',
+          backgroundImage: 'repeating-linear-gradient(0deg,transparent,transparent 9px,rgba(255,45,120,0.08) 9px,rgba(255,45,120,0.08) 10px),repeating-linear-gradient(90deg,transparent,transparent 9px,rgba(46,144,250,0.08) 9px,rgba(46,144,250,0.08) 10px)',
+        }}>
+          {/* Large left photo */}
+          <div className="absolute" style={{ left:'3%', top:'5%', width:'46%', height:'70%', background:'#1A1A28', border:'1px solid rgba(255,45,120,0.35)', boxShadow:'0 0 8px rgba(255,45,120,0.25)' }} />
+          {/* Right stack */}
+          <div className="absolute" style={{ left:'52%', top:'5%', width:'44%', height:'33%', background:'#1A1A28', border:'1px solid rgba(46,144,250,0.35)', boxShadow:'0 0 6px rgba(46,144,250,0.2)' }} />
+          <div className="absolute" style={{ left:'52%', top:'40%', width:'44%', height:'33%', background:'#1A1A28', border:'1px solid rgba(46,144,250,0.35)', boxShadow:'0 0 6px rgba(46,144,250,0.2)' }} />
+          {/* Bottom bar */}
+          <div className="absolute" style={{ bottom:'6%', left:'3%', right:'3%', height:'12%', borderTop:'1px solid rgba(255,45,120,0.3)', paddingTop:'3px' }}>
+            <div style={{ fontSize:'7px', color:'#FF2D78', fontWeight:900, fontFamily:'sans-serif', letterSpacing:'0.15em', textTransform:'uppercase' }}>OUR STORY</div>
+          </div>
+          {/* Stickers */}
+          <div className="absolute" style={{ left:'4%', bottom:'7%', fontSize:'8px' }}>⚡</div>
+          <div className="absolute" style={{ right:'4%', bottom:'7%', fontSize:'8px' }}>✨</div>
+        </div>
+      )
+
+    case 'polaroid-wall':
+      return (
+        <div className={base} style={{
+          background: '#FFFDF8',
+          backgroundImage: 'radial-gradient(circle, #C8B8A8 1px, transparent 1px)',
+          backgroundSize: '10px 10px',
+        }}>
+          {/* Scattered polaroids */}
+          {[
+            { l:'4%',  t:'8%',  w:'22%', h:'30%', r:-5 },
+            { l:'22%', t:'12%', w:'22%', h:'30%', r:3  },
+            { l:'44%', t:'6%',  w:'22%', h:'30%', r:-2 },
+            { l:'66%', t:'10%', w:'22%', h:'30%', r:4  },
+          ].map((p, i) => (
+            <div key={i} className="absolute" style={{
+              left:p.l, top:p.t, width:p.w, height:p.h,
+              background:'white', boxShadow:'0 2px 6px rgba(0,0,0,0.15)',
+              transform:`rotate(${p.r}deg)`, paddingBottom:'6px',
+            }}>
+              <div style={{ width:'100%', height:'75%', background:'#F0EAE0' }} />
+            </div>
+          ))}
+          {/* Stickers */}
+          <div className="absolute" style={{ left:'10%', bottom:'14%', fontSize:'9px' }}>⭐</div>
+          <div className="absolute" style={{ right:'10%', bottom:'14%', fontSize:'9px' }}>💛</div>
+          <div className="absolute" style={{ left:'50%', bottom:'6%', transform:'translateX(-50%)', fontSize:'7px', color:'#8C7460', fontFamily:'Georgia,serif', fontStyle:'italic', whiteSpace:'nowrap' }}>Summer 2025</div>
+        </div>
+      )
+
+    case 'paper-cut':
+      return (
+        <div className={base} style={{ background: '#FF5C1A' }}>
+          {/* Large left block */}
+          <div className="absolute" style={{ left:'3%', top:'5%', width:'42%', height:'70%', background:'#FFFBF5', boxShadow:'3px 3px 0 rgba(0,0,0,0.4)' }} />
+          {/* Top right */}
+          <div className="absolute" style={{ left:'47%', top:'5%', width:'26%', height:'34%', background:'#FFFBF5', boxShadow:'3px 3px 0 rgba(0,0,0,0.4)' }} />
+          <div className="absolute" style={{ left:'75%', top:'5%', width:'22%', height:'34%', background:'#FFFBF5', boxShadow:'3px 3px 0 rgba(0,0,0,0.4)' }} />
+          {/* Bottom right wide */}
+          <div className="absolute" style={{ left:'47%', top:'41%', width:'50%', height:'34%', background:'#FFFBF5', boxShadow:'3px 3px 0 rgba(0,0,0,0.4)' }} />
+          {/* Bottom label */}
+          <div className="absolute" style={{ left:'3%', bottom:'8%', fontSize:'7px', color:'rgba(255,251,245,0.9)', fontWeight:900, fontFamily:'sans-serif', textTransform:'uppercase', letterSpacing:'0.1em' }}>THE STORY</div>
+        </div>
+      )
+
+    case 'watercolor':
+      return (
+        <div className={base} style={{
+          background: '#FEFCFA',
+          backgroundImage: 'radial-gradient(ellipse 200px 150px at 20% 30%, rgba(255,170,0,0.12) 0%, transparent 70%), radial-gradient(ellipse 150px 180px at 80% 60%, rgba(139,92,246,0.10) 0%, transparent 70%), radial-gradient(ellipse 180px 120px at 50% 80%, rgba(18,183,106,0.09) 0%, transparent 70%)',
+        }}>
+          {/* Large left square */}
+          <div className="absolute" style={{ left:'4%', top:'6%', width:'36%', height:'60%', background:'rgba(248,242,236,0.9)', border:'1.5px solid rgba(180,140,100,0.25)', boxShadow:'0 3px 10px rgba(100,80,60,0.10)' }} />
+          {/* Right column */}
+          <div className="absolute" style={{ left:'43%', top:'6%', width:'28%', height:'28%', background:'rgba(248,242,236,0.9)', border:'1.5px solid rgba(180,140,100,0.25)' }} />
+          <div className="absolute" style={{ left:'73%', top:'6%', width:'24%', height:'28%', background:'rgba(248,242,236,0.9)', border:'1.5px solid rgba(180,140,100,0.25)' }} />
+          <div className="absolute" style={{ left:'43%', top:'37%', width:'54%', height:'28%', background:'rgba(248,242,236,0.9)', border:'1.5px solid rgba(180,140,100,0.25)' }} />
+          {/* Stickers */}
+          <div className="absolute" style={{ left:'5%', bottom:'14%', fontSize:'9px' }}>🌺</div>
+          <div className="absolute" style={{ right:'5%', bottom:'14%', fontSize:'9px' }}>🍃</div>
+          <div className="absolute" style={{ left:'50%', bottom:'6%', transform:'translateX(-50%)', fontSize:'6px', color:'#7A5C48', fontFamily:'Georgia,serif', fontStyle:'italic', whiteSpace:'nowrap' }}>A beautiful memory</div>
         </div>
       )
 

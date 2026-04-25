@@ -107,10 +107,15 @@ export function ScrapbookCanvas({ scrapbook, isOwner, pickablePhotos }: Props) {
   const templateId = (scrapbook.template ?? DEFAULT_TEMPLATE_ID) as ScrapbookTemplateId
   const tpl = SCRAPBOOK_TEMPLATES.find(t => t.id === templateId) ?? SCRAPBOOK_TEMPLATES[0]!
 
-  // Page background style
-  const pageBgStyle: CSSProperties = tpl.pageBg.startsWith('#') || tpl.pageBg.startsWith('rgb')
-    ? { backgroundColor: tpl.pageBg }
-    : { background: tpl.pageBg }
+  // Page background style (base + optional pattern overlay)
+  const pageBgStyle: CSSProperties = {
+    ...(tpl.pageBg.startsWith('#') || tpl.pageBg.startsWith('rgb')
+      ? { backgroundColor: tpl.pageBg }
+      : { background: tpl.pageBg }),
+    ...(tpl.pageBgPattern
+      ? { backgroundImage: tpl.pageBgPattern + (tpl.pageBg.startsWith('#') ? '' : ''), backgroundSize: tpl.id === 'polaroid-wall' ? '24px 24px' : undefined }
+      : {}),
+  }
 
   // ── Page state ────────────────────────────────────────────────────────────
   const [pages, setPages]             = useState<ScrapbookPage[]>(scrapbook.pages)
@@ -150,6 +155,8 @@ export function ScrapbookCanvas({ scrapbook, isOwner, pickablePhotos }: Props) {
   const [showStickers,    setShowStickers]    = useState(false)
   const [showComments,    setShowComments]    = useState(false)
   const [showPhotoPicker, setShowPhotoPicker] = useState(false)
+  // When set, the next photo picked fills this slot instead of creating a new element
+  const [targetSlotId,    setTargetSlotId]    = useState<string | null>(null)
   const [showShareModal,  setShowShareModal]  = useState(false)
   const [isShared,        setIsShared]        = useState(scrapbook.isShared)
   const [shareToken]                          = useState(scrapbook.shareToken)
@@ -350,6 +357,18 @@ export function ScrapbookCanvas({ scrapbook, isOwner, pickablePhotos }: Props) {
 
   async function addPhotoElement(url: string) {
     if (!currentPage) return
+    setShowPhotoPicker(false)
+
+    // If a slot was targeted, fill it instead of creating a new element
+    if (targetSlotId) {
+      const slotId = targetSlotId
+      setTargetSlotId(null)
+      patchElement(slotId, { content: url })
+      setSelectedId(slotId)
+      await updateElement(slotId, { content: url })
+      return
+    }
+
     const layout = nextPhotoLayout(elements, templateId, tpl.rotated)
     const id = crypto.randomUUID()
     const newEl: CanvasElement = {
@@ -363,7 +382,6 @@ export function ScrapbookCanvas({ scrapbook, isOwner, pickablePhotos }: Props) {
       i === currentPageIdx ? { ...p, elements: [...p.elements, newEl] } : p
     ))
     setSelectedId(id)
-    setShowPhotoPicker(false)
     await createElement(scrapbook.id, currentPage.id, {
       type: 'photo', content: url,
       x: layout.x, y: layout.y, width: layout.w, height: layout.h,
@@ -426,9 +444,33 @@ export function ScrapbookCanvas({ scrapbook, isOwner, pickablePhotos }: Props) {
     const result = await createPage(scrapbook.id, newPageNumber)
     setSaving(false)
     if (result.error || !result.id) return
+    const pageId = result.id
+
+    // Seed elements from template layout
+    const seedDefs = tpl.seedElements ?? []
+    const seededElements: CanvasElement[] = []
+    for (const seed of seedDefs) {
+      const elResult = await createElement(scrapbook.id, pageId, {
+        type: seed.type, content: seed.content,
+        x: seed.x, y: seed.y, width: seed.width, height: seed.height,
+        rotation: seed.rotation, zIndex: seed.zIndex,
+        style: {},
+      })
+      if (elResult.id) {
+        seededElements.push({
+          id: elResult.id, pageId,
+          type: seed.type, content: seed.content,
+          x: seed.x, y: seed.y, width: seed.width, height: seed.height,
+          rotation: seed.rotation, zIndex: seed.zIndex,
+          style: {}, createdAt: new Date().toISOString(),
+        })
+      }
+    }
+
     const newPage: ScrapbookPage = {
-      id: result.id, scrapbookId: scrapbook.id,
-      pageNumber: newPageNumber, createdAt: new Date().toISOString(), elements: [],
+      id: pageId, scrapbookId: scrapbook.id,
+      pageNumber: newPageNumber, createdAt: new Date().toISOString(),
+      elements: seededElements,
     }
     setPages(prev => [...prev, newPage])
     setPageIdx(pages.length) // go to new page
@@ -803,6 +845,38 @@ function DraggableElement({
     >
       {/* ── Content ── */}
       {el.type === 'photo' && (() => {
+        // Empty slot — show a clickable placeholder
+        if (!el.content) {
+          return (
+            <div
+              onClick={isOwner ? (e) => {
+                e.stopPropagation()
+                setTargetSlotId(el.id)
+                setShowPhotoPicker(true)
+              } : undefined}
+              style={{
+                width: '100%', height: '100%',
+                background: tpl.slotBg ?? 'rgba(200,200,200,0.2)',
+                border: tpl.slotBorder ?? '2px dashed rgba(150,150,150,0.5)',
+                display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center',
+                gap: 8, cursor: isOwner ? 'pointer' : 'default',
+                userSelect: 'none',
+              }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"
+                style={{ width: 32, height: 32, opacity: 0.4 }}
+                strokeLinecap="round" strokeLinejoin="round">
+                <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
+                <circle cx="12" cy="13" r="4" />
+              </svg>
+              <span style={{ fontSize: 12, opacity: 0.45, fontFamily: 'sans-serif', fontWeight: 600 }}>
+                {isOwner ? 'Add photo' : ''}
+              </span>
+            </div>
+          )
+        }
+
         const frame = getFrameDef(el.style.frameStyle)
         return (
           <div style={frame.wrapper}>
