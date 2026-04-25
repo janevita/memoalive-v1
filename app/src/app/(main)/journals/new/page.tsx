@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createJournal } from '@/lib/actions/journals'
 import { ROUTES } from '@/lib/constants'
@@ -18,8 +18,6 @@ const COVER_COLORS = [
 
 export default function NewJournalPage() {
   const router = useRouter()
-  const params = useSearchParams()
-  const eventId = params.get('eventId') ?? ''
 
   const [subjectName, setSubjectName] = useState('')
   const [title, setTitle] = useState('')
@@ -34,7 +32,7 @@ export default function NewJournalPage() {
     if (!subjectName.trim() || !title.trim()) return
     setLoading(true)
     setError('')
-    const result = await createJournal(eventId, subjectName.trim(), title.trim(), coverColor)
+    const result = await createJournal(subjectName.trim(), title.trim(), coverColor)
     if (result.error) {
       setError(result.error)
       setLoading(false)

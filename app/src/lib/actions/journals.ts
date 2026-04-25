@@ -8,7 +8,6 @@ const MAX_JOURNALS_PER_YEAR = 5
 // ── Journal CRUD ──────────────────────────────────────────────────────────────
 
 export async function createJournal(
-  eventId: string,
   subjectName: string,
   title: string,
   coverColor: string,
@@ -17,12 +16,12 @@ export async function createJournal(
   const { data: { user } } = await db.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  // Enforce year limit
+  // Enforce year limit per user
   const year = new Date().getFullYear()
   const { count } = await db
     .from('journals')
     .select('id', { count: 'exact', head: true })
-    .eq('event_id', eventId)
+    .eq('created_by', user.id)
     .eq('year', year)
   if ((count ?? 0) >= MAX_JOURNALS_PER_YEAR) {
     return { error: `You can only create ${MAX_JOURNALS_PER_YEAR} journals per year.` }
@@ -30,7 +29,7 @@ export async function createJournal(
 
   const { data, error } = await db
     .from('journals')
-    .insert({ event_id: eventId, created_by: user.id, subject_name: subjectName, title, cover_color: coverColor, year })
+    .insert({ created_by: user.id, subject_name: subjectName, title, cover_color: coverColor, year })
     .select('id')
     .single()
   if (error) return { error: error.message }

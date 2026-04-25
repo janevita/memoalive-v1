@@ -6,7 +6,6 @@ import type { Journal, JournalWithChapters, JournalBlock, JournalChapter } from 
 function rowToJournal(r: Record<string, unknown>): Journal {
   return {
     id:          r.id as string,
-    eventId:     r.event_id as string,
     createdBy:   r.created_by as string,
     subjectName: r.subject_name as string,
     subjectId:   r.subject_id as string | undefined,
@@ -47,12 +46,12 @@ function rowToChapter(r: Record<string, unknown>, blocks: JournalBlock[]): Journ
 
 // ── Fetchers ──────────────────────────────────────────────────────────────────
 
-export async function getJournalsForEvent(eventId: string): Promise<Journal[]> {
+export async function getJournalsForUser(userId: string): Promise<Journal[]> {
   const db = await createClient()
   const { data } = await db
     .from('journals')
     .select('*')
-    .eq('event_id', eventId)
+    .eq('created_by', userId)
     .order('created_at', { ascending: false })
   return (data ?? []).map(rowToJournal)
 }
@@ -97,13 +96,13 @@ export async function getJournal(journalId: string): Promise<JournalWithChapters
   return { ...rowToJournal(journal as Record<string, unknown>), chapters: fullChapters }
 }
 
-export async function countJournalsThisYear(eventId: string): Promise<number> {
+export async function countJournalsThisYear(userId: string): Promise<number> {
   const db = await createClient()
   const year = new Date().getFullYear()
   const { count } = await db
     .from('journals')
     .select('id', { count: 'exact', head: true })
-    .eq('event_id', eventId)
+    .eq('created_by', userId)
     .eq('year', year)
   return count ?? 0
 }

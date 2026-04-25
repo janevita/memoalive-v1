@@ -731,7 +731,6 @@ create index if not exists idx_upload_session_photos_session
 
 create table if not exists public.journals (
   id            uuid primary key default gen_random_uuid(),
-  event_id      uuid not null references public.events(id) on delete cascade,
   created_by    uuid not null references auth.users(id) on delete cascade,
   subject_name  text not null,              -- the person this journal is about
   subject_id    uuid,                       -- optional: links to group_people.id
@@ -769,29 +768,25 @@ alter table public.journals         enable row level security;
 alter table public.journal_chapters enable row level security;
 alter table public.journal_blocks   enable row level security;
 
-create policy "journals_event_members_select" on public.journals
-  for select using (
-    exists (
-      select 1 from public.event_participants ep
-      where ep.event_id = journals.event_id and ep.profile_id = auth.uid()
-    )
-  );
+-- Journals are personal: visible to the creator, or publicly if shared
+create policy "journals_select" on public.journals
+  for select using (created_by = auth.uid() or is_public = true);
 
-create policy "journals_creator_insert" on public.journals
+create policy "journals_insert" on public.journals
   for insert with check (created_by = auth.uid());
 
-create policy "journals_creator_update" on public.journals
+create policy "journals_update" on public.journals
   for update using (created_by = auth.uid());
 
-create policy "journals_creator_delete" on public.journals
+create policy "journals_delete" on public.journals
   for delete using (created_by = auth.uid());
 
 create policy "journal_chapters_via_journal" on public.journal_chapters
   for all using (
     exists (
       select 1 from public.journals j
-      join public.event_participants ep on ep.event_id = j.event_id
-      where j.id = journal_chapters.journal_id and ep.profile_id = auth.uid()
+      where j.id = journal_chapters.journal_id
+        and (j.created_by = auth.uid() or j.is_public = true)
     )
   );
 
@@ -800,12 +795,12 @@ create policy "journal_blocks_via_chapter" on public.journal_blocks
     exists (
       select 1 from public.journal_chapters jc
       join public.journals j on j.id = jc.journal_id
-      join public.event_participants ep on ep.event_id = j.event_id
-      where jc.id = journal_blocks.chapter_id and ep.profile_id = auth.uid()
+      where jc.id = journal_blocks.chapter_id
+        and (j.created_by = auth.uid() or j.is_public = true)
     )
   );
 
-create index if not exists idx_journals_event on public.journals(event_id);
-create index if not exists idx_journals_year on public.journals(event_id, year);
+create index if not exists idx_journals_user on public.journals(created_by);
+create index if not exists idx_journals_year on public.journals(created_by, year);
 create index if not exists idx_journal_chapters_journal on public.journal_chapters(journal_id);
 create index if not exists idx_journal_blocks_chapter on public.journal_blocks(chapter_id, block_order);

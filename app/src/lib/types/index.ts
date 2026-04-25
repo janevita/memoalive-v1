@@ -445,7 +445,6 @@ export interface JournalChapter {
 
 export interface Journal {
   id:          string
-  eventId:     string
   createdBy:   string
   subjectName: string
   subjectId?:  string

@@ -1,12 +1,10 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { getJournalsForEvent } from '@/lib/data/journals'
+import { getJournalsForUser } from '@/lib/data/journals'
 import { ROUTES } from '@/lib/constants'
 import type { Journal } from '@/lib/types'
 
 export const metadata = { title: 'Journals' }
-
-const COVER_COLORS = ['#FF5C1A','#FFAA00','#FF2D78','#2E90FA','#12B76A','#8B5CF6','#1C1917']
 
 function JournalCoverCard({ journal }: { journal: Journal }) {
   return (
@@ -40,6 +38,13 @@ function JournalCoverCard({ journal }: { journal: Journal }) {
              style={{ background: 'rgba(0,0,0,0.3)', color: 'white' }}>
           {journal.year}
         </div>
+        {/* Private badge */}
+        {!journal.isPublic && (
+          <div className="absolute bottom-2 right-2 px-1.5 py-0.5 text-[10px] font-bold"
+               style={{ background: 'rgba(0,0,0,0.3)', color: 'rgba(255,255,255,0.7)' }}>
+            🔒
+          </div>
+        )}
       </div>
       <p className="text-sm font-semibold text-ink truncate">{journal.title}</p>
       <p className="text-xs text-ink-soft">{journal.subjectName}</p>
@@ -52,26 +57,7 @@ export default async function JournalsPage() {
   const { data: { user } } = await db.auth.getUser()
   if (!user) return null
 
-  // Get user's first event for now (in a full app, you'd let them pick)
-  const { data: events } = await db
-    .from('events')
-    .select('id, title')
-    .order('created_at', { ascending: false })
-    .limit(1)
-  const event = events?.[0]
-  if (!event) {
-    return (
-      <div className="min-h-screen bg-canvas flex items-center justify-center px-6">
-        <div className="text-center max-w-sm">
-          <p className="font-serif text-2xl font-bold text-ink mb-2">No family group yet</p>
-          <p className="text-ink-soft text-sm mb-6">Create a family group first to start writing journals.</p>
-          <Link href={ROUTES.newEvent} className="btn btn-primary btn-md">Create a group</Link>
-        </div>
-      </div>
-    )
-  }
-
-  const journals = await getJournalsForEvent(event.id)
+  const journals = await getJournalsForUser(user.id)
   const thisYear = new Date().getFullYear()
   const thisYearCount = journals.filter(j => j.year === thisYear).length
   const canCreate = thisYearCount < 5
@@ -85,14 +71,11 @@ export default async function JournalsPage() {
             <p className="text-[10px] font-bold uppercase tracking-[2px] text-sunrise mb-1">Life Stories</p>
             <h1 className="font-serif text-4xl font-bold text-white">Journals</h1>
             <p className="text-white/50 text-sm mt-1">
-              {thisYearCount}/5 journals created this year
+              {thisYearCount}/5 journals this year · Private by default
             </p>
           </div>
           {canCreate && (
-            <Link
-              href={`/journals/new?eventId=${event.id}`}
-              className="btn btn-primary btn-md"
-            >
+            <Link href={ROUTES.newJournal} className="btn btn-primary btn-md">
               + New Journal
             </Link>
           )}
@@ -111,9 +94,10 @@ export default async function JournalsPage() {
             <div className="text-6xl mb-4">📖</div>
             <p className="font-serif text-2xl font-bold text-ink mb-2">No journals yet</p>
             <p className="text-ink-soft mb-8 max-w-sm mx-auto">
-              Start writing someone's life story — their memories, their words, their world.
+              Start writing someone&apos;s life story — their memories, their words, their world.
+              Journals are private to you unless you choose to share them.
             </p>
-            <Link href={`/journals/new?eventId=${event.id}`} className="btn btn-primary btn-lg">
+            <Link href={ROUTES.newJournal} className="btn btn-primary btn-lg">
               Write the first journal
             </Link>
           </div>
@@ -123,10 +107,7 @@ export default async function JournalsPage() {
               <JournalCoverCard key={j.id} journal={j} />
             ))}
             {canCreate && (
-              <Link
-                href={`/journals/new?eventId=${event.id}`}
-                className="block group"
-              >
+              <Link href={ROUTES.newJournal} className="block group">
                 <div
                   className="w-full aspect-[3/4] mb-3 flex flex-col items-center justify-center transition-transform group-hover:-translate-y-1"
                   style={{
