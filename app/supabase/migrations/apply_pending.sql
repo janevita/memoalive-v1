@@ -723,3 +723,89 @@ create policy "upload_session_photos_any_insert" on public.upload_session_photos
 
 create index if not exists idx_upload_session_photos_session
   on public.upload_session_photos(session_id, created_at);
+
+
+-- ──────────────────────────────────────────────────────────────────────────────
+-- 011 — Journals (life-story book feature)
+-- ──────────────────────────────────────────────────────────────────────────────
+
+create table if not exists public.journals (
+  id            uuid primary key default gen_random_uuid(),
+  event_id      uuid not null references public.events(id) on delete cascade,
+  created_by    uuid not null references auth.users(id) on delete cascade,
+  subject_name  text not null,              -- the person this journal is about
+  subject_id    uuid,                       -- optional: links to group_people.id
+  title         text not null default 'My Life Story',
+  cover_color   text not null default '#FF5C1A',
+  cover_style   text not null default 'classic',
+  year          int  not null default extract(year from now())::int,
+  is_public     boolean not null default false,
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now()
+);
+
+create table if not exists public.journal_chapters (
+  id             uuid primary key default gen_random_uuid(),
+  journal_id     uuid not null references public.journals(id) on delete cascade,
+  chapter_number int  not null default 1,
+  title          text not null default 'Chapter 1',
+  created_at     timestamptz not null default now()
+);
+
+create table if not exists public.journal_blocks (
+  id             uuid primary key default gen_random_uuid(),
+  chapter_id     uuid not null references public.journal_chapters(id) on delete cascade,
+  block_order    int  not null default 0,
+  block_type     text not null default 'paragraph',  -- heading|paragraph|image|quote|divider
+  content        text not null default '',
+  image_url      text,                               -- for image blocks
+  style          jsonb not null default '{}'::jsonb,
+  created_at     timestamptz not null default now(),
+  updated_at     timestamptz not null default now()
+);
+
+-- RLS
+alter table public.journals         enable row level security;
+alter table public.journal_chapters enable row level security;
+alter table public.journal_blocks   enable row level security;
+
+create policy "journals_event_members_select" on public.journals
+  for select using (
+    exists (
+      select 1 from public.event_participants ep
+      where ep.event_id = journals.event_id and ep.profile_id = auth.uid()
+    )
+  );
+
+create policy "journals_creator_insert" on public.journals
+  for insert with check (created_by = auth.uid());
+
+create policy "journals_creator_update" on public.journals
+  for update using (created_by = auth.uid());
+
+create policy "journals_creator_delete" on public.journals
+  for delete using (created_by = auth.uid());
+
+create policy "journal_chapters_via_journal" on public.journal_chapters
+  for all using (
+    exists (
+      select 1 from public.journals j
+      join public.event_participants ep on ep.event_id = j.event_id
+      where j.id = journal_chapters.journal_id and ep.profile_id = auth.uid()
+    )
+  );
+
+create policy "journal_blocks_via_chapter" on public.journal_blocks
+  for all using (
+    exists (
+      select 1 from public.journal_chapters jc
+      join public.journals j on j.id = jc.journal_id
+      join public.event_participants ep on ep.event_id = j.event_id
+      where jc.id = journal_blocks.chapter_id and ep.profile_id = auth.uid()
+    )
+  );
+
+create index if not exists idx_journals_event on public.journals(event_id);
+create index if not exists idx_journals_year on public.journals(event_id, year);
+create index if not exists idx_journal_chapters_journal on public.journal_chapters(journal_id);
+create index if not exists idx_journal_blocks_chapter on public.journal_blocks(chapter_id, block_order);

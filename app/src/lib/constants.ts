@@ -54,6 +54,10 @@ export const ROUTES = {
   join:       (code: string) => `/join/${code}`,
   album:      (eventId: string, albumId: string) => `/events/${eventId}/albums/${albumId}`,
   newAlbum:   (eventId: string) => `/events/${eventId}/albums/new`,
+  journals:    '/journals',
+  journal:     (id: string) => `/journals/${id}`,
+  newJournal:  '/journals/new',
+  printJournal: (id: string) => `/journals/${id}/print`,
 } as const
 
 export const VISIBILITY_LABELS: Record<Visibility, string> = {

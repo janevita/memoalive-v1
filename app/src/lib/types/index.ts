@@ -409,3 +409,55 @@ export interface SignupForm {
   email: string
   password: string
 }
+
+// ── Journals ──────────────────────────────────────────────────────────────────
+
+export type JournalBlockType = 'heading' | 'paragraph' | 'image' | 'quote' | 'divider'
+
+export interface JournalBlockStyle {
+  fontSize?:   number
+  bold?:       boolean
+  italic?:     boolean
+  align?:      'left' | 'center' | 'right'
+  color?:      string
+}
+
+export interface JournalBlock {
+  id:         string
+  chapterId:  string
+  blockOrder: number
+  blockType:  JournalBlockType
+  content:    string
+  imageUrl?:  string
+  style:      JournalBlockStyle
+  createdAt:  string
+  updatedAt:  string
+}
+
+export interface JournalChapter {
+  id:            string
+  journalId:     string
+  chapterNumber: number
+  title:         string
+  createdAt:     string
+  blocks:        JournalBlock[]
+}
+
+export interface Journal {
+  id:          string
+  eventId:     string
+  createdBy:   string
+  subjectName: string
+  subjectId?:  string
+  title:       string
+  coverColor:  string
+  coverStyle:  string
+  year:        number
+  isPublic:    boolean
+  createdAt:   string
+  updatedAt:   string
+}
+
+export interface JournalWithChapters extends Journal {
+  chapters: JournalChapter[]
+}

@@ -51,6 +51,16 @@ function ImportIcon({ className }: { className?: string }) {
   )
 }
 
+function JournalIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="4" y="2" width="14" height="20" rx="1" />
+      <path d="M4 6h14M4 10h10M4 14h8" />
+      <path d="M2 4v16" strokeWidth="3" strokeLinecap="square" />
+    </svg>
+  )
+}
+
 function ScrapbookIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -75,9 +85,9 @@ function LogoMark() {
 
 const navItems = [
   { href: ROUTES.dashboard,   label: 'Home',      icon: HomeIcon },
-  { href: ROUTES.search,      label: 'Search',    icon: SearchIcon },
-  { href: ROUTES.newMemory,   label: 'Add',       icon: PlusIcon, primary: true },
   { href: ROUTES.scrapbooks,  label: 'Scrapbooks', icon: ScrapbookIcon },
+  { href: ROUTES.newMemory,   label: 'Add',       icon: PlusIcon, primary: true },
+  { href: ROUTES.journals,    label: 'Journals',  icon: JournalIcon },
   { href: ROUTES.profile,     label: 'Profile',   icon: UserIcon },
 ]
 
