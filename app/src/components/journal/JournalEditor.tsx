@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import type { JournalWithChapters, JournalChapter, JournalBlock, JournalBlockType } from '@/lib/types'
 import {
   createChapter,
@@ -22,7 +22,15 @@ interface Props {
   isOwner: boolean
 }
 
-// ── Block Renderer ────────────────────────────────────────────────────────────
+// ── Auto-grow helper ──────────────────────────────────────────────────────────
+
+function autoGrow(el: HTMLTextAreaElement | null) {
+  if (!el) return
+  el.style.height = 'auto'
+  el.style.height = el.scrollHeight + 'px'
+}
+
+// ── Block Editor ──────────────────────────────────────────────────────────────
 
 function BlockEditor({
   block,
@@ -39,54 +47,109 @@ function BlockEditor({
   onDelete: (id: string) => void
   onAddAfter: (type: JournalBlockType) => void
 }) {
-  const [editing, setEditing] = useState(false)
-  const [content, setContent] = useState(block.content)
-  const [aiLoading, setAiLoading] = useState<string | null>(null)
+  const [content, setContent]       = useState(block.content)
+  const [focused, setFocused]       = useState(false)
+  const [aiLoading, setAiLoading]   = useState<string | null>(null)
   const [suggestions, setSuggestions] = useState<string[] | null>(null)
+  const [saved, setSaved]           = useState(true)
   const textRef = useRef<HTMLTextAreaElement>(null)
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const save = useCallback(async (val: string) => {
-    if (val === block.content) return
+  // Auto-grow on mount and whenever content changes externally
+  useEffect(() => {
+    autoGrow(textRef.current)
+  }, [content])
+
+  // Debounced save — 800ms after last keystroke
+  const scheduleSave = useCallback((val: string) => {
+    setSaved(false)
+    if (saveTimer.current) clearTimeout(saveTimer.current)
+    saveTimer.current = setTimeout(async () => {
+      onUpdate(block.id, { content: val })
+      await updateBlock(block.id, { content: val })
+      setSaved(true)
+    }, 800)
+  }, [block.id, onUpdate])
+
+  // Flush any pending save immediately
+  const flushSave = useCallback(async (val: string) => {
+    if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null }
+    if (val === block.content && saved) return
     onUpdate(block.id, { content: val })
     await updateBlock(block.id, { content: val })
-  }, [block.id, block.content, onUpdate])
+    setSaved(true)
+  }, [block.id, block.content, onUpdate, saved])
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value
+    setContent(val)
+    autoGrow(e.target)
+    scheduleSave(val)
+  }
 
   const handleBlur = () => {
-    setEditing(false)
-    save(content)
+    setFocused(false)
+    // Only flush if no AI operation is in progress
+    if (!aiLoading) flushSave(content)
   }
 
-  // Auto-grow textarea
-  const autoGrow = (el: HTMLTextAreaElement) => {
-    el.style.height = 'auto'
-    el.style.height = el.scrollHeight + 'px'
-  }
+  // ── AI handlers ──────────────────────────────────────────────────────────
 
-  // AI: grammar correct
   const handleGrammar = async () => {
-    if (!content.trim()) return
+    if (!content.trim() || aiLoading) return
     setAiLoading('grammar')
     const { result } = await aiGrammarCorrect(content)
-    if (result) { setContent(result); await save(result) }
+    if (result) {
+      setContent(result)
+      onUpdate(block.id, { content: result })
+      await updateBlock(block.id, { content: result })
+      setSaved(true)
+      setTimeout(() => autoGrow(textRef.current), 0)
+    }
     setAiLoading(null)
   }
 
-  // AI: tone polish
   const handleTone = async () => {
-    if (!content.trim()) return
+    if (!content.trim() || aiLoading) return
     setAiLoading('tone')
     const { result } = await aiTonePolish(content, subjectName)
-    if (result) { setContent(result); await save(result) }
+    if (result) {
+      setContent(result)
+      onUpdate(block.id, { content: result })
+      await updateBlock(block.id, { content: result })
+      setSaved(true)
+      setTimeout(() => autoGrow(textRef.current), 0)
+    }
     setAiLoading(null)
+    textRef.current?.focus()
   }
 
-  // AI: writing suggestions
   const handleSuggestions = async () => {
+    if (aiLoading) return
     setAiLoading('suggest')
+    setSuggestions(null)
     const { suggestions: s } = await aiWritingSuggestions(content, subjectName)
     setSuggestions(s ?? [])
     setAiLoading(null)
   }
+
+  const applySuggestion = (s: string) => {
+    const appended = content ? content.trimEnd() + ' ' + s : s
+    setContent(appended)
+    setSuggestions(null)
+    scheduleSave(appended)
+    setTimeout(() => {
+      autoGrow(textRef.current)
+      textRef.current?.focus()
+      // scroll to end
+      if (textRef.current) {
+        textRef.current.selectionStart = appended.length
+        textRef.current.selectionEnd = appended.length
+      }
+    }, 0)
+  }
+
+  // ── Special block types ──────────────────────────────────────────────────
 
   if (block.blockType === 'divider') {
     return (
@@ -96,11 +159,10 @@ function BlockEditor({
         <div className="flex-1 h-[2px] bg-ink/20" />
         {isOwner && (
           <button
+            onMouseDown={e => e.preventDefault()}
             onClick={() => onDelete(block.id)}
             className="absolute -top-3 right-0 opacity-0 group-hover:opacity-100 transition-opacity text-ink-faint hover:text-blossom text-xs px-1"
-          >
-            ✕
-          </button>
+          >✕</button>
         )}
       </div>
     )
@@ -124,147 +186,172 @@ function BlockEditor({
           </figure>
         ) : (
           <div
-            className="w-full h-48 flex flex-col items-center justify-center gap-2 cursor-pointer"
-            style={{ background: '#F5F0E8', border: '3px dashed #D4CCC4', boxShadow: '3px 3px 0 #D4CCC4' }}
+            className="w-full h-48 flex flex-col items-center justify-center gap-2"
+            style={{ background: '#F5F0E8', border: '3px dashed #D4CCC4' }}
           >
             <span className="text-3xl">🖼</span>
-            <p className="text-ink-faint text-sm font-semibold">Image block</p>
-            <p className="text-ink-faint text-xs">(Upload coming soon)</p>
+            <p className="text-ink-faint text-sm font-semibold">Image block — upload coming soon</p>
           </div>
         )}
         {isOwner && (
           <button
+            onMouseDown={e => e.preventDefault()}
             onClick={() => onDelete(block.id)}
             className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity w-7 h-7 flex items-center justify-center text-xs font-bold text-white"
             style={{ background: '#FF2D78', border: '2px solid #B5005A' }}
-          >
-            ✕
-          </button>
+          >✕</button>
         )}
       </div>
     )
   }
 
-  // Text blocks: heading, paragraph, quote
+  // ── Text blocks: heading / paragraph / quote ─────────────────────────────
+
   const isHeading = block.blockType === 'heading'
-  const isQuote = block.blockType === 'quote'
+  const isQuote   = block.blockType === 'quote'
+  const showAI    = isOwner && focused && !isHeading
 
   return (
     <div className="group relative">
-      {/* AI toolbar — appears on focus */}
-      {isOwner && editing && !isHeading && (
-        <div className="flex items-center gap-1 mb-2 flex-wrap">
-          <button
-            onClick={handleGrammar}
-            disabled={!!aiLoading}
-            className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider transition-all"
-            style={{ background: '#F5F0E8', border: '1.5px solid #1C1917', boxShadow: '1.5px 1.5px 0 #1C1917' }}
-          >
-            {aiLoading === 'grammar' ? '…' : '✓ Grammar'}
-          </button>
-          <button
-            onClick={handleTone}
-            disabled={!!aiLoading}
-            className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider transition-all"
-            style={{ background: '#F5F0E8', border: '1.5px solid #1C1917', boxShadow: '1.5px 1.5px 0 #1C1917' }}
-          >
-            {aiLoading === 'tone' ? '…' : '✨ Polish tone'}
-          </button>
-          <button
-            onClick={handleSuggestions}
-            disabled={!!aiLoading}
-            className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider transition-all"
-            style={{ background: '#F5F0E8', border: '1.5px solid #1C1917', boxShadow: '1.5px 1.5px 0 #1C1917' }}
-          >
-            {aiLoading === 'suggest' ? '…' : '💡 Suggestions'}
-          </button>
-          {!isOwner && null}
-        </div>
-      )}
 
-      {/* Suggestions panel */}
+      {/* ── AI toolbar — stays mounted while focused, buttons use onMouseDown to prevent blur ── */}
+      <div className={cn(
+        'flex items-center gap-1 mb-2 flex-wrap transition-all duration-150',
+        showAI ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none h-0 mb-0 overflow-hidden'
+      )}>
+        <button
+          onMouseDown={e => e.preventDefault()} // prevents textarea blur
+          onClick={handleGrammar}
+          disabled={!!aiLoading}
+          className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider disabled:opacity-40 transition-all"
+          style={{ background: '#F5F0E8', border: '1.5px solid #1C1917', boxShadow: '1.5px 1.5px 0 #1C1917' }}
+        >
+          {aiLoading === 'grammar' ? '…fixing' : '✓ Grammar'}
+        </button>
+        <button
+          onMouseDown={e => e.preventDefault()}
+          onClick={handleTone}
+          disabled={!!aiLoading}
+          className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider disabled:opacity-40 transition-all"
+          style={{ background: '#F5F0E8', border: '1.5px solid #1C1917', boxShadow: '1.5px 1.5px 0 #1C1917' }}
+        >
+          {aiLoading === 'tone' ? '…polishing' : '✨ Polish tone'}
+        </button>
+        <button
+          onMouseDown={e => e.preventDefault()}
+          onClick={handleSuggestions}
+          disabled={!!aiLoading}
+          className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider disabled:opacity-40 transition-all"
+          style={{ background: '#F5F0E8', border: '1.5px solid #1C1917', boxShadow: '1.5px 1.5px 0 #1C1917' }}
+        >
+          {aiLoading === 'suggest' ? '…thinking' : '💡 Ideas'}
+        </button>
+        {!saved && !aiLoading && (
+          <span className="text-[9px] text-ink-faint ml-1">saving…</span>
+        )}
+        {saved && focused && (
+          <span className="text-[9px] text-sage ml-1">✓ saved</span>
+        )}
+      </div>
+
+      {/* ── Writing suggestions panel ── */}
       {suggestions && suggestions.length > 0 && (
         <div className="mb-3 p-3" style={{ background: '#FFFBF5', border: '2px solid #FFAA00', boxShadow: '3px 3px 0 #B57500' }}>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-golden mb-2">Writing prompts to continue:</p>
-          <ul className="space-y-1.5">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-golden mb-2">Continue the story:</p>
+          <ul className="space-y-2">
             {suggestions.map((s, i) => (
               <li key={i}>
                 <button
-                  className="text-sm text-ink text-left hover:text-sunrise transition-colors w-full"
-                  onClick={() => {
-                    const appended = content ? content + ' ' + s : s
-                    setContent(appended)
-                    setSuggestions(null)
-                    setTimeout(() => textRef.current?.focus(), 0)
-                  }}
+                  className="text-sm text-ink text-left hover:text-sunrise transition-colors w-full leading-snug"
+                  onClick={() => applySuggestion(s)}
                 >
-                  <span className="text-golden font-bold">{i + 1}.</span> {s}
+                  <span className="text-golden font-bold mr-1">{i + 1}.</span>{s}
                 </button>
               </li>
             ))}
           </ul>
-          <button className="text-xs text-ink-faint mt-2 hover:text-ink" onClick={() => setSuggestions(null)}>Dismiss</button>
+          <button
+            onMouseDown={e => e.preventDefault()}
+            className="text-xs text-ink-faint mt-2 hover:text-ink"
+            onClick={() => setSuggestions(null)}
+          >Dismiss</button>
         </div>
       )}
 
+      {/* ── Editable or read-only ── */}
       {isOwner ? (
-        <div className="relative">
-          {isQuote && (
-            <div className="absolute left-0 top-0 bottom-0 w-1" style={{ background: '#FF5C1A' }} />
+        <div className={cn('relative', isQuote && 'pl-4')}>
+          {isQuote && <div className="absolute left-0 top-0 bottom-0 w-1" style={{ background: '#FF5C1A' }} />}
+          {aiLoading && (
+            <div className="absolute inset-0 bg-canvas/60 flex items-center justify-center z-10 pointer-events-none">
+              <span className="text-xs text-ink-soft animate-pulse">AI is writing…</span>
+            </div>
           )}
           <textarea
             ref={textRef}
             value={content}
-            onChange={e => { setContent(e.target.value); autoGrow(e.target) }}
-            onFocus={() => setEditing(true)}
+            onChange={handleChange}
+            onFocus={() => setFocused(true)}
             onBlur={handleBlur}
             placeholder={
-              isHeading ? 'Section heading…'
-              : isQuote ? '"A meaningful quote or memory…"'
-              : 'Write here…'
+              isHeading   ? 'Section heading…'
+              : isQuote   ? '"A meaningful quote or memory…"'
+              : 'Write here… click to start'
             }
-            className={cn(
-              'w-full resize-none outline-none bg-transparent transition-colors',
-              isHeading ? 'font-serif text-2xl font-bold text-ink border-b-2 border-ink/20 pb-2 mb-4' : '',
-              isQuote ? 'text-lg italic text-ink/80 pl-5' : '',
-              !isHeading && !isQuote ? 'text-base text-ink leading-relaxed' : '',
-              editing ? 'bg-golden/5 px-2 py-1' : ''
-            )}
+            spellCheck
             rows={1}
-            style={{ minHeight: isHeading ? '2.5rem' : '1.5rem' }}
-            onInput={e => autoGrow(e.currentTarget)}
+            className={cn(
+              'w-full resize-none outline-none bg-transparent block leading-relaxed',
+              'transition-colors placeholder:text-ink-faint/50',
+              isHeading
+                ? 'font-serif text-2xl font-bold text-ink border-b-2 border-ink/20 pb-2 mb-2'
+                : isQuote
+                ? 'text-lg italic text-ink/80 pl-3'
+                : 'text-base text-ink',
+              focused && !isHeading && 'bg-amber-50/30 px-2 py-1 -mx-2'
+            )}
+            style={{ minHeight: isHeading ? '2.5rem' : '1.5rem', overflowY: 'hidden' }}
           />
         </div>
       ) : (
-        /* Read-only */
+        /* Read-only view */
         <div>
-          {isHeading && <h3 className="font-serif text-2xl font-bold text-ink border-b-2 border-ink/20 pb-2 mb-4">{content}</h3>}
+          {isHeading && <h3 className="font-serif text-2xl font-bold text-ink border-b-2 border-ink/20 pb-2 mb-2">{content}</h3>}
           {isQuote && (
-            <blockquote className="border-l-4 border-sunrise pl-5 my-4">
+            <blockquote className="border-l-4 border-sunrise pl-4 my-4">
               <p className="text-lg italic text-ink/80">{content}</p>
             </blockquote>
           )}
           {!isHeading && !isQuote && (
-            <p className="text-base text-ink leading-relaxed whitespace-pre-wrap">{content}</p>
+            <p className="text-base text-ink leading-relaxed whitespace-pre-wrap">{content || <span className="text-ink-faint/40 italic">Empty paragraph</span>}</p>
           )}
         </div>
       )}
 
-      {/* Delete / add-after controls */}
+      {/* ── Add-block & delete row ── */}
       {isOwner && (
-        <div className={cn('flex items-center gap-1 mt-1', editing ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 transition-opacity')}>
-          <span className="text-[10px] text-ink-faint">Add:</span>
+        <div className={cn(
+          'flex items-center gap-1 mt-1 transition-opacity duration-100',
+          focused ? 'opacity-70' : 'opacity-0 group-hover:opacity-60'
+        )}>
+          <span className="text-[10px] text-ink-faint">＋</span>
           {(['paragraph','heading','quote','image','divider'] as JournalBlockType[]).map(t => (
             <button
               key={t}
+              onMouseDown={e => e.preventDefault()}
               onClick={() => onAddAfter(t)}
-              className="text-[10px] px-1.5 py-0.5 text-ink-faint hover:text-ink font-semibold border border-transparent hover:border-ink/20 transition-all"
+              title={t}
+              className="text-[10px] px-1.5 py-0.5 text-ink-faint hover:text-ink font-semibold border border-transparent hover:border-ink/20 transition-all rounded"
             >
               {t === 'paragraph' ? '¶' : t === 'heading' ? 'H' : t === 'quote' ? '❝' : t === 'image' ? '🖼' : '—'}
             </button>
           ))}
           <div className="flex-1" />
-          <button onClick={() => onDelete(block.id)} className="text-[10px] text-ink-faint hover:text-blossom transition-colors px-1">✕</button>
+          <button
+            onMouseDown={e => e.preventDefault()}
+            onClick={() => onDelete(block.id)}
+            className="text-[10px] text-ink-faint hover:text-blossom transition-colors px-1"
+          >✕</button>
         </div>
       )}
     </div>
@@ -283,26 +370,23 @@ function ChapterPanel({
   chapter: JournalChapter
   subjectName: string
   isOwner: boolean
-  onChapterUpdate: (id: string, patch: Partial<JournalChapter & { blocks: JournalBlock[] }>) => void
+  onChapterUpdate: (id: string, patch: Partial<JournalChapter>) => void
   onChapterDelete: (id: string) => void
 }) {
-  const [blocks, setBlocks] = useState<JournalBlock[]>(chapter.blocks)
+  const [blocks, setBlocks]         = useState<JournalBlock[]>(chapter.blocks)
   const [chapterTitle, setChapterTitle] = useState(chapter.title)
   const [editingTitle, setEditingTitle] = useState(false)
-  const [titleSaving, setTitleSaving] = useState(false)
 
-  const saveTitle = async () => {
+  const saveTitle = async (val: string) => {
     setEditingTitle(false)
-    if (chapterTitle === chapter.title) return
-    setTitleSaving(true)
-    await updateChapterTitle(chapter.id, chapterTitle)
-    onChapterUpdate(chapter.id, { title: chapterTitle })
-    setTitleSaving(false)
+    if (val.trim() === chapter.title || !val.trim()) return
+    await updateChapterTitle(chapter.id, val.trim())
+    onChapterUpdate(chapter.id, { title: val.trim() })
   }
 
-  const handleUpdateBlock = (id: string, patch: Partial<JournalBlock>) => {
+  const handleUpdateBlock = useCallback((id: string, patch: Partial<JournalBlock>) => {
     setBlocks(prev => prev.map(b => b.id === id ? { ...b, ...patch } : b))
-  }
+  }, [])
 
   const handleDeleteBlock = async (id: string) => {
     setBlocks(prev => prev.filter(b => b.id !== id))
@@ -311,7 +395,13 @@ function ChapterPanel({
 
   const handleAddAfter = async (afterBlockId: string, type: JournalBlockType) => {
     const idx = blocks.findIndex(b => b.id === afterBlockId)
-    const newOrder = idx >= 0 ? blocks[idx]!.blockOrder + 0.5 : blocks.length
+    // Reorder: give new block an order that slots it after the current one
+    const prev = blocks[idx]
+    const next = blocks[idx + 1]
+    const newOrder = prev && next
+      ? (prev.blockOrder + next.blockOrder) / 2
+      : prev ? prev.blockOrder + 1 : 0
+
     const result = await createBlock(chapter.id, type, newOrder)
     if (result.id) {
       const newBlock: JournalBlock = {
@@ -325,9 +415,9 @@ function ChapterPanel({
         updatedAt: new Date().toISOString(),
       }
       setBlocks(prev => {
-        const next = [...prev]
-        next.splice(idx + 1, 0, newBlock)
-        return next
+        const copy = [...prev]
+        copy.splice(idx + 1, 0, newBlock)
+        return copy
       })
     }
   }
@@ -358,17 +448,20 @@ function ChapterPanel({
             autoFocus
             value={chapterTitle}
             onChange={e => setChapterTitle(e.target.value)}
-            onBlur={saveTitle}
-            onKeyDown={e => e.key === 'Enter' && saveTitle()}
+            onBlur={e => saveTitle(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') saveTitle(chapterTitle) }}
             className="font-serif text-xl font-bold text-ink bg-transparent outline-none border-b-2 border-sunrise flex-1"
           />
         ) : (
           <h2
-            className={cn('font-serif text-xl font-bold text-ink flex-1', isOwner && 'cursor-pointer hover:text-sunrise transition-colors')}
+            className={cn(
+              'font-serif text-xl font-bold text-ink flex-1',
+              isOwner && 'cursor-pointer hover:text-sunrise transition-colors'
+            )}
+            title={isOwner ? 'Click to rename' : undefined}
             onClick={() => isOwner && setEditingTitle(true)}
           >
             {chapterTitle}
-            {titleSaving && <span className="text-xs text-ink-faint ml-2 font-sans font-normal">saving…</span>}
           </h2>
         )}
         {isOwner && (
@@ -382,19 +475,19 @@ function ChapterPanel({
       </div>
 
       {/* Blocks */}
-      <div className="space-y-4 max-w-[680px]">
+      <div className="space-y-5 max-w-[680px]">
         {blocks.length === 0 && isOwner ? (
-          <div className="py-8 text-center">
+          <div className="py-10 text-center">
             <p className="text-ink-faint text-sm mb-4">This chapter is empty. Start writing.</p>
-            <div className="flex justify-center gap-2">
+            <div className="flex justify-center gap-2 flex-wrap">
               {(['paragraph','heading','quote'] as JournalBlockType[]).map(t => (
                 <button
                   key={t}
                   onClick={() => handleAddFirst(t)}
-                  className="px-3 py-2 text-xs font-bold uppercase tracking-wider transition-all"
+                  className="px-3 py-2 text-xs font-bold uppercase tracking-wider transition-all hover:-translate-y-0.5"
                   style={{ background: '#F5F0E8', border: '2px solid #1C1917', boxShadow: '2px 2px 0 #1C1917' }}
                 >
-                  {t === 'paragraph' ? '+ Text' : t === 'heading' ? '+ Heading' : '+ Quote'}
+                  {t === 'paragraph' ? '+ Paragraph' : t === 'heading' ? '+ Heading' : '+ Quote'}
                 </button>
               ))}
             </div>
@@ -420,7 +513,7 @@ function ChapterPanel({
 // ── Main Editor ───────────────────────────────────────────────────────────────
 
 export function JournalEditor({ journal, isOwner }: Props) {
-  const [chapters, setChapters] = useState<JournalChapter[]>(journal.chapters)
+  const [chapters, setChapters]     = useState<JournalChapter[]>(journal.chapters)
   const [addingChapter, setAddingChapter] = useState(false)
 
   const handleAddChapter = async () => {
@@ -440,17 +533,19 @@ export function JournalEditor({ journal, isOwner }: Props) {
     setAddingChapter(false)
   }
 
-  const handleChapterUpdate = (id: string, patch: Partial<JournalChapter>) => {
+  const handleChapterUpdate = useCallback((id: string, patch: Partial<JournalChapter>) => {
     setChapters(prev => prev.map(c => c.id === id ? { ...c, ...patch } : c))
-  }
+  }, [])
 
   const handleChapterDelete = async (id: string) => {
+    if (!confirm('Delete this chapter and all its content?')) return
     setChapters(prev => prev.filter(c => c.id !== id))
     await deleteChapter(id)
   }
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-10 flex gap-8">
+
       {/* Sidebar: chapter list */}
       <aside className="hidden lg:block w-48 flex-shrink-0">
         <div className="sticky top-24">
@@ -470,7 +565,7 @@ export function JournalEditor({ journal, isOwner }: Props) {
             <button
               onClick={handleAddChapter}
               disabled={addingChapter}
-              className="mt-4 w-full text-xs font-bold px-2 py-2 transition-all"
+              className="mt-4 w-full text-xs font-bold px-2 py-2 transition-all hover:-translate-y-0.5 disabled:opacity-50"
               style={{ background: '#F5F0E8', border: '2px solid #1C1917', boxShadow: '2px 2px 0 #1C1917' }}
             >
               {addingChapter ? '…' : '+ Add chapter'}
@@ -481,7 +576,8 @@ export function JournalEditor({ journal, isOwner }: Props) {
 
       {/* Book content */}
       <main className="flex-1 min-w-0">
-        {/* Book-style cover strip */}
+
+        {/* Cover strip */}
         <div
           className="mb-10 px-6 py-8 relative overflow-hidden"
           style={{
@@ -496,7 +592,9 @@ export function JournalEditor({ journal, isOwner }: Props) {
             backgroundSize: '10px 10px',
           }} />
           <div className="relative pl-4">
-            <p className="text-white/60 text-xs font-semibold uppercase tracking-widest mb-2">Life Stories · {journal.year}</p>
+            <p className="text-white/60 text-xs font-semibold uppercase tracking-widest mb-2">
+              Life Stories · {journal.year}
+            </p>
             <h1 className="font-serif text-3xl font-bold text-white mb-1">{journal.title}</h1>
             <p className="text-white/70 text-sm">The story of {journal.subjectName}</p>
           </div>
@@ -533,6 +631,7 @@ export function JournalEditor({ journal, isOwner }: Props) {
               </div>
             ))}
 
+            {/* Mobile: add chapter at bottom */}
             {isOwner && (
               <div className="pt-8 border-t-[2px] border-ink/10">
                 <button
