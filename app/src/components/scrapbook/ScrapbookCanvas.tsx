@@ -20,7 +20,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   SCRAPBOOK_TEMPLATES, ROUTES, DEFAULT_TEMPLATE_ID,
-  type ScrapbookTemplateId,
+  type ScrapbookTemplateId, type SeedElement,
 } from '@/lib/constants'
 import type { ScrapbookWithPages, ScrapbookPage, CanvasElement, ElementStyle } from '@/lib/types'
 import {
@@ -42,6 +42,51 @@ const PHOTO_LAYOUTS = [
   { x: 660, y: 30,  w: 480, h: 280, r: 1.5  },
   { x: 680, y: 330, w: 360, h: 270, r: -1   },
   { x: 50,  y: 420, w: 360, h: 270, r: 2    },
+]
+
+// ── Cover page seed elements (page 1 of every scrapbook) ─────────────────────
+
+const COVER_SEED_ELEMENTS: SeedElement[] = [
+  // Hero photo — near full-width, upper 70 % of the page
+  { type: 'photo', content: '', x: 80,  y: 20,  width: 1040, height: 580, rotation: 0, zIndex: 0 },
+  // Title — large display text below the photo
+  { type: 'text',  content: 'Our Story',               x: 80,  y: 630, width: 730, height: 80,  rotation: 0, zIndex: 1 },
+  // Subtitle
+  { type: 'text',  content: 'A collection of memories', x: 80,  y: 725, width: 730, height: 50,  rotation: 0, zIndex: 2 },
+  // Year — bottom-right corner
+  { type: 'text',  content: String(new Date().getFullYear()), x: 940, y: 655, width: 180, height: 80, rotation: 0, zIndex: 3 },
+]
+
+// ── Inner page layout variations (cycle by page number – 2) ──────────────────
+
+const INNER_PAGE_LAYOUTS: SeedElement[][] = [
+  // A — portrait left + two landscape right
+  [
+    { type: 'photo', content: '', x: 20,  y: 20,  width: 440, height: 800, rotation: -1,   zIndex: 0 },
+    { type: 'photo', content: '', x: 490, y: 20,  width: 685, height: 390, rotation:  0.5, zIndex: 1 },
+    { type: 'photo', content: '', x: 490, y: 430, width: 685, height: 390, rotation: -0.5, zIndex: 2 },
+  ],
+  // B — wide hero top + three-photo strip
+  [
+    { type: 'photo', content: '', x: 20,  y: 20,  width: 1160, height: 520, rotation:  0,   zIndex: 0 },
+    { type: 'photo', content: '', x: 20,  y: 560, width: 370,  height: 260, rotation: -1,   zIndex: 1 },
+    { type: 'photo', content: '', x: 415, y: 560, width: 370,  height: 260, rotation:  0.5, zIndex: 2 },
+    { type: 'photo', content: '', x: 810, y: 560, width: 370,  height: 260, rotation: -0.5, zIndex: 3 },
+  ],
+  // C — 2×2 equal grid
+  [
+    { type: 'photo', content: '', x: 20,  y: 20,  width: 570, height: 400, rotation: 0, zIndex: 0 },
+    { type: 'photo', content: '', x: 610, y: 20,  width: 570, height: 400, rotation: 0, zIndex: 1 },
+    { type: 'photo', content: '', x: 20,  y: 430, width: 570, height: 390, rotation: 0, zIndex: 2 },
+    { type: 'photo', content: '', x: 610, y: 430, width: 570, height: 390, rotation: 0, zIndex: 3 },
+  ],
+  // D — large centre spotlight + flanking portraits + caption
+  [
+    { type: 'photo', content: '', x: 260, y: 20,  width: 680, height: 530, rotation:  0,   zIndex: 0 },
+    { type: 'photo', content: '', x: 20,  y: 100, width: 220, height: 300, rotation: -4,   zIndex: 1 },
+    { type: 'photo', content: '', x: 960, y: 120, width: 220, height: 300, rotation:  3.5, zIndex: 2 },
+    { type: 'text',  content: 'Tell your story…', x: 260, y: 580, width: 680, height: 60, rotation: 0, zIndex: 3 },
+  ],
 ]
 
 // Template-specific text colours (for new text elements)
@@ -446,8 +491,17 @@ export function ScrapbookCanvas({ scrapbook, isOwner, pickablePhotos }: Props) {
     if (result.error || !result.id) return
     const pageId = result.id
 
-    // Seed elements from template layout
-    const seedDefs = tpl.seedElements ?? []
+    // Seed elements: cover for page 1, cycled layout for every subsequent page
+    // Inner pages also pick up any decorative stickers from the template.
+    let seedDefs: SeedElement[]
+    if (newPageNumber === 1) {
+      seedDefs = COVER_SEED_ELEMENTS
+    } else {
+      const layoutIdx = (newPageNumber - 2) % INNER_PAGE_LAYOUTS.length
+      const layout    = INNER_PAGE_LAYOUTS[layoutIdx]!
+      const tplStickers = (tpl.seedElements ?? []).filter(s => s.type === 'sticker')
+      seedDefs = [...layout, ...tplStickers]
+    }
     const seededElements: CanvasElement[] = []
     for (const seed of seedDefs) {
       const elResult = await createElement(scrapbook.id, pageId, {
@@ -702,12 +756,14 @@ export function ScrapbookCanvas({ scrapbook, isOwner, pickablePhotos }: Props) {
               {pages.map((p, i) => (
                 <button key={p.id} type="button"
                   onClick={() => setPageIdx(i)}
-                  className={`w-8 h-8 rounded-full text-xs font-bold transition-all ${
+                  className={`h-8 rounded-full text-xs font-bold transition-all ${
+                    i === 0 ? 'px-3' : 'w-8'
+                  } ${
                     i === currentPageIdx
                       ? 'bg-flame text-white shadow-[0_0_0_3px_rgba(249,118,28,0.25)]'
                       : 'bg-ink/10 text-ink-soft hover:bg-ink/20'
                   }`}>
-                  {i + 1}
+                  {i === 0 ? 'Cover' : i + 1}
                 </button>
               ))}
               {isOwner && (
