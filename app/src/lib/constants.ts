@@ -49,6 +49,7 @@ export const ROUTES = {
   event:     (id: string) => `/events/${id}`,
   memory:    (eventId: string, memoryId: string) =>
                `/events/${eventId}/memories/${memoryId}`,
+  memories:   '/memories',
   newMemory:  '/memories/new',
   newEvent:   '/events/new',
   join:       (code: string) => `/join/${code}`,

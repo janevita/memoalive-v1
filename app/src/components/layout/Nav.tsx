@@ -72,6 +72,17 @@ function ScrapbookIcon({ className }: { className?: string }) {
   )
 }
 
+function MemoriesIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="9" cy="8" r="3" />
+      <path d="M3 20c0-3.3 2.7-6 6-6" />
+      <circle cx="16" cy="8" r="3" />
+      <path d="M13 14a6 6 0 016 6" />
+    </svg>
+  )
+}
+
 function LogoMark() {
   return (
     <div
@@ -83,12 +94,22 @@ function LogoMark() {
   )
 }
 
-const navItems = [
-  { href: ROUTES.dashboard,   label: 'Home',      icon: HomeIcon },
-  { href: ROUTES.scrapbooks,  label: 'Scrapbooks', icon: ScrapbookIcon },
-  { href: ROUTES.newMemory,   label: 'Add',       icon: PlusIcon, primary: true },
-  { href: ROUTES.journals,    label: 'Journals',  icon: JournalIcon },
-  { href: ROUTES.profile,     label: 'Profile',   icon: UserIcon },
+// Mobile bottom nav: 5 items — Home, Memories, Add (primary), Journals, Profile
+const mobileNavItems = [
+  { href: ROUTES.dashboard,  label: 'Home',     icon: HomeIcon },
+  { href: ROUTES.memories,   label: 'Memories', icon: MemoriesIcon },
+  { href: ROUTES.newMemory,  label: 'Add',      icon: PlusIcon, primary: true },
+  { href: ROUTES.journals,   label: 'Journals', icon: JournalIcon },
+  { href: ROUTES.profile,    label: 'Profile',  icon: UserIcon },
+]
+
+// Desktop top nav (all items except primary Add)
+const desktopNavItems = [
+  { href: ROUTES.dashboard,  label: 'Home',       icon: HomeIcon },
+  { href: ROUTES.memories,   label: 'Memories',   icon: MemoriesIcon },
+  { href: ROUTES.scrapbooks, label: 'Scrapbooks', icon: ScrapbookIcon },
+  { href: ROUTES.journals,   label: 'Journals',   icon: JournalIcon },
+  { href: ROUTES.profile,    label: 'Profile',    icon: UserIcon },
 ]
 
 export function Nav() {
@@ -106,7 +127,7 @@ export function Nav() {
         </Link>
 
         <nav className="flex items-center gap-2">
-          {navItems.filter(i => !i.primary).map(({ href, label, icon: Icon }) => {
+          {desktopNavItems.map(({ href, label, icon: Icon }) => {
             const active = pathname === href || pathname.startsWith(href + '/')
             return (
               <Link
@@ -153,7 +174,7 @@ export function Nav() {
         className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-canvas flex items-stretch"
         style={{ borderTop: '2.5px solid #1C1917', paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
-        {navItems.map(({ href, label, icon: Icon, primary }) => {
+        {mobileNavItems.map(({ href, label, icon: Icon, primary }) => {
           const active = pathname === href || pathname.startsWith(href + '/')
           if (primary) {
             return (

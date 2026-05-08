@@ -214,6 +214,63 @@ function groupBy<T extends Record<string, unknown>>(arr: T[], key: keyof T): Rec
   }, {})
 }
 
+// ── Cross-event activity feed (home page) ─────────────────────────────────────
+// Returns recent published memories across ALL events the user belongs to.
+
+export async function getCrossFeedMemories(limit = 20): Promise<MemoryWithDetails[]> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+
+  // 1. Gather the user's group IDs
+  const { data: memberships } = await supabase
+    .from('event_participants')
+    .select('group_id')
+    .eq('user_id', user.id)
+
+  if (!memberships || memberships.length === 0) return []
+
+  const groupIds = (memberships as { group_id: string }[]).map(m => m.group_id)
+
+  // 2. Fetch recent memories across all those groups
+  const { data: rows, error } = await supabase
+    .from('memories')
+    .select('*, profiles:author_id ( id, name, avatar_url )')
+    .in('group_id', groupIds)
+    .eq('is_published', true)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  if (error || !rows) return []
+
+  const memoryIds = rows.map((r: MemoryRow) => r.id)
+  if (memoryIds.length === 0) return []
+
+  const [mediaRes, reactionsRes, commentsRes] = await Promise.all([
+    supabase.from('media_items').select('*').in('memory_id', memoryIds).order('sort_order'),
+    supabase.from('reactions').select('memory_id, type, user_id').in('memory_id', memoryIds),
+    supabase.from('comments').select('memory_id').in('memory_id', memoryIds),
+  ])
+
+  const mediaByMemory     = groupBy<MediaRow>(mediaRes.data ?? [], 'memory_id')
+  const reactionsByMemory = groupBy<{ memory_id: string; type: string; user_id: string }>(
+    reactionsRes.data ?? [], 'memory_id'
+  )
+  const commentsByMemory: Record<string, number> = {}
+  for (const row of (commentsRes.data ?? []) as { memory_id: string }[]) {
+    commentsByMemory[row.memory_id] = (commentsByMemory[row.memory_id] ?? 0) + 1
+  }
+
+  return (rows as (MemoryRow & { profiles?: ProfileRow | null })[]).map(m =>
+    shapeMemory(
+      m,
+      mediaByMemory[m.id] ?? [],
+      buildReactionSummary(reactionsByMemory[m.id] ?? [], user.id),
+      commentsByMemory[m.id] ?? 0
+    )
+  )
+}
+
 function buildReactionSummary(
   reactions: { type: string; user_id: string }[],
   currentUserId?: string
