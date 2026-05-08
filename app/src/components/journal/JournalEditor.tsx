@@ -212,9 +212,9 @@ function BlockEditor({
     const localPreview = TONE_TRANSFORMS[selectedTone](content)
     setContent(localPreview)
     autoGrow(textRef.current)
-    // Then try AI for a better rewrite
+    // Then try AI for a better rewrite — send the already-transformed text
     const subjectDesc = `${subjectName} (${selectedTone} tone)`
-    const { result } = await aiTonePolish(content, subjectDesc)
+    const { result } = await aiTonePolish(localPreview, subjectDesc)
     if (result) {
       setContent(result)
       onUpdate(block.id, { content: result })
@@ -244,6 +244,26 @@ function BlockEditor({
       autoGrow(ta)
       ta.focus()
       ta.selectionStart = ta.selectionEnd = start + snippet.length
+    }, 0)
+  }
+
+  // ── Wrap selection with markers (bold/italic via markdown syntax) ──────────
+
+  const wrapSelection = (open: string, close: string) => {
+    const ta = textRef.current
+    if (!ta) return
+    const start    = ta.selectionStart ?? content.length
+    const end      = ta.selectionEnd   ?? content.length
+    const selected = content.slice(start, end)
+    const updated  = content.slice(0, start) + open + selected + close + content.slice(end)
+    setContent(updated)
+    scheduleSave(updated)
+    setTimeout(() => {
+      autoGrow(ta)
+      ta.focus()
+      // Re-select the wrapped text
+      ta.selectionStart = start + open.length
+      ta.selectionEnd   = start + open.length + selected.length
     }, 0)
   }
 
@@ -343,10 +363,10 @@ function BlockEditor({
           {focused && !isHeading && (
             <div className="flex items-center gap-0.5 px-2 py-1 mb-0"
               style={{ background: '#F0EBE0', border: '1.5px solid #1C1917', borderBottom: 'none' }}>
-              <button onMouseDown={e => { e.preventDefault(); document.execCommand?.('bold') }}
-                className="w-6 h-6 flex items-center justify-center text-xs font-bold text-ink hover:bg-ink/10 rounded" title="Bold (Ctrl+B)"><b>B</b></button>
-              <button onMouseDown={e => { e.preventDefault(); document.execCommand?.('italic') }}
-                className="w-6 h-6 flex items-center justify-center text-xs italic text-ink hover:bg-ink/10 rounded" title="Italic (Ctrl+I)"><i>I</i></button>
+              <button onMouseDown={e => { e.preventDefault(); wrapSelection('**', '**') }}
+                className="w-6 h-6 flex items-center justify-center text-xs font-bold text-ink hover:bg-ink/10 rounded" title="Bold"><b>B</b></button>
+              <button onMouseDown={e => { e.preventDefault(); wrapSelection('_', '_') }}
+                className="w-6 h-6 flex items-center justify-center text-xs italic text-ink hover:bg-ink/10 rounded" title="Italic"><i>I</i></button>
               <div className="w-px h-3 bg-ink/20 mx-1" />
               <span className="text-[10px] text-ink-faint ml-auto pr-1">
                 {isQuote ? 'Quote' : 'Paragraph'}

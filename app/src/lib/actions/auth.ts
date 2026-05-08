@@ -56,8 +56,12 @@ export async function signIn(_prev: { error?: string } | undefined, formData: Fo
     return { error: 'Invalid email or password.' }
   }
 
-  const inviteCode = (formData.get('inviteCode') as string | null)?.trim()
-  redirect(inviteCode ? ROUTES.join(inviteCode) : ROUTES.dashboard)
+  const inviteCode   = (formData.get('inviteCode')   as string | null)?.trim()
+  const redirectTo   = (formData.get('redirectTo')   as string | null)?.trim()
+  const destination  = inviteCode   ? ROUTES.join(inviteCode)
+                     : redirectTo   ? redirectTo
+                     : ROUTES.dashboard
+  redirect(destination)
 }
 
 // ── Sign out ──────────────────────────────────────────────────────────────────

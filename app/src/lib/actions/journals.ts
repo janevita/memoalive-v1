@@ -29,7 +29,7 @@ export async function createJournal(
 
   const { data, error } = await db
     .from('journals')
-    .insert({ created_by: user.id, subject_name: subjectName, title, cover_color: coverColor, year })
+    .insert({ created_by: user.id, subject_name: subjectName, title, cover_color: coverColor, cover_style: 'classic', year })
     .select('id')
     .single()
   if (error) return { error: error.message }

@@ -1,14 +1,14 @@
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getScrapbookWithPages, getPickablePhotos } from '@/lib/data/scrapbooks'
 import { ScrapbookCanvas } from '@/components/scrapbook/ScrapbookCanvas'
+import { ROUTES } from '@/lib/constants'
 
 interface Props {
   params: { id: string }
 }
 
 export async function generateMetadata({ params }: Props) {
-  // Lightweight fetch — just the title
   const supabase = await createClient()
   const { data } = await supabase
     .from('scrapbooks')
@@ -19,6 +19,10 @@ export async function generateMetadata({ params }: Props) {
 }
 
 export default async function ScrapbookPage({ params }: Props) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect(`${ROUTES.login}?redirect=/scrapbooks/${params.id}`)
+
   const [scrapbook, pickablePhotos] = await Promise.all([
     getScrapbookWithPages(params.id),
     getPickablePhotos(),
@@ -26,10 +30,12 @@ export default async function ScrapbookPage({ params }: Props) {
 
   if (!scrapbook) notFound()
 
+  const isOwner = scrapbook.ownerId === user.id
+
   return (
     <ScrapbookCanvas
       scrapbook={scrapbook}
-      isOwner={true}
+      isOwner={isOwner}
       pickablePhotos={pickablePhotos}
     />
   )

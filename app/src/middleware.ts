@@ -1,7 +1,7 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-const PROTECTED_PREFIXES = ['/dashboard', '/memories/new', '/events/new', '/search', '/profile', '/import', '/scrapbooks']
+const PROTECTED_PREFIXES = ['/dashboard', '/memories/new', '/events/new', '/search', '/profile', '/import', '/scrapbooks', '/journals']
 const AUTH_ROUTES = ['/login', '/signup']
 
 const SCRAPBOOK_SHARE_RE = /^\/scrapbooks\/s\//
