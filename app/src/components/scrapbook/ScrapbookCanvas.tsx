@@ -30,6 +30,7 @@ import {
 import { StickerPicker } from './StickerPicker'
 import { CommentPanel } from './CommentPanel'
 import { createUploadSession, getSessionPhotos, type SessionPhoto } from '@/lib/actions/upload'
+import { createClient as createBrowserClient } from '@/lib/supabase/client'
 
 // ── Canvas constants ──────────────────────────────────────────────────────────
 
@@ -347,6 +348,15 @@ export function ScrapbookCanvas({ scrapbook, isOwner, pickablePhotos }: Props) {
     const { hasMoved, wasAlreadySelected } = drag
     dragRef.current = null
 
+    // Click (no drag) on empty photo slot → open photo picker
+    if (!hasMoved && el.type === 'photo' && !el.content && drag.mode === 'move') {
+      setTargetSlotId(el.id)
+      setShowPhotoPicker(true)
+      setShowStickers(false)
+      setShowComments(false)
+      return
+    }
+
     // Click (no drag) on an already-selected text element → enter edit mode
     if (!hasMoved && wasAlreadySelected && el.type === 'text' && drag.mode === 'move') {
       setEditingTextId(el.id)
@@ -396,6 +406,23 @@ export function ScrapbookCanvas({ scrapbook, isOwner, pickablePhotos }: Props) {
     const newStyle = { ...el.style, frameStyle }
     patchElement(el.id, { style: newStyle })
     await updateElement(el.id, { style: newStyle })
+  }
+
+  // Upload a dropped file directly into an empty photo slot
+  async function handlePhotoFileDrop(slotId: string, file: File) {
+    if (!file.type.startsWith('image/')) return
+    const supabase = createBrowserClient()
+    const ext  = file.name.split('.').pop() ?? 'jpg'
+    const path = `scrapbook/${scrapbook.id}/${slotId}-${Date.now()}.${ext}`
+    const { data, error } = await supabase.storage
+      .from('memory-media')
+      .upload(path, file, { contentType: file.type, upsert: false })
+    if (error || !data) return
+    const { data: { publicUrl } } = supabase.storage
+      .from('memory-media')
+      .getPublicUrl(data.path)
+    patchElement(slotId, { content: publicUrl })
+    await updateElement(slotId, { content: publicUrl })
   }
 
   // ── Add elements ──────────────────────────────────────────────────────────
@@ -738,7 +765,8 @@ export function ScrapbookCanvas({ scrapbook, isOwner, pickablePhotos }: Props) {
                         onTextSave={text => handleTextSave(el, text)}
                         onStyleChange={style => handleStyleSave(el, style)}
                         onFrameChange={frameStyle => handleFrameChange(el, frameStyle)}
-                        onOpenPhotoPicker={id => { setTargetSlotId(id); setShowPhotoPicker(true) }}
+                        onOpenPhotoPicker={id => { setTargetSlotId(id); setShowPhotoPicker(true); setShowStickers(false); setShowComments(false) }}
+                        onFileDrop={(id, file) => handlePhotoFileDrop(id, file)}
                       />
                     ))}
                   </div>
@@ -865,6 +893,7 @@ interface DraggableElementProps {
   onStyleChange: (style: Partial<ElementStyle>) => void
   onFrameChange: (frameStyle: string) => void
   onOpenPhotoPicker?: (slotId: string) => void
+  onFileDrop?: (slotId: string, file: File) => void
   tpl: { slotBg?: string; slotBorder?: string }
 }
 
@@ -872,8 +901,9 @@ function DraggableElement({
   el, isSelected, isEditing, isOwner, tplColor, tpl,
   onSelect, onDragStart, onPointerMove, onPointerUp,
   onDelete, onStartTextEdit, onTextSave, onStyleChange, onFrameChange,
-  onOpenPhotoPicker,
+  onOpenPhotoPicker, onFileDrop,
 }: DraggableElementProps) {
+  const [dragOver, setDragOver] = useState(false)
   const textRef = useRef<HTMLDivElement>(null)
 
   // Sync contentEditable when content changes from outside
@@ -910,28 +940,35 @@ function DraggableElement({
         if (!el.content) {
           return (
             <div
-              onClick={isOwner ? (e) => {
-                e.stopPropagation()
-                onOpenPhotoPicker?.(el.id)
+              onDragOver={isOwner ? e => { e.preventDefault(); e.stopPropagation(); setDragOver(true) } : undefined}
+              onDragLeave={isOwner ? () => setDragOver(false) : undefined}
+              onDrop={isOwner ? e => {
+                e.preventDefault(); e.stopPropagation(); setDragOver(false)
+                const file = e.dataTransfer.files[0]
+                if (file) onFileDrop?.(el.id, file)
               } : undefined}
               style={{
                 width: '100%', height: '100%',
-                background: tpl.slotBg ?? 'rgba(200,200,200,0.2)',
-                border: tpl.slotBorder ?? '2px dashed rgba(150,150,150,0.5)',
+                background: dragOver
+                  ? 'rgba(249,118,28,0.12)'
+                  : (tpl.slotBg ?? 'rgba(200,200,200,0.2)'),
+                border: dragOver
+                  ? '2px dashed rgba(249,118,28,0.7)'
+                  : (tpl.slotBorder ?? '2px dashed rgba(150,150,150,0.5)'),
                 display: 'flex', flexDirection: 'column',
                 alignItems: 'center', justifyContent: 'center',
                 gap: 8, cursor: isOwner ? 'pointer' : 'default',
-                userSelect: 'none',
+                userSelect: 'none', transition: 'background 0.15s, border-color 0.15s',
               }}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"
-                style={{ width: 32, height: 32, opacity: 0.4 }}
+                style={{ width: 32, height: 32, opacity: dragOver ? 0.7 : 0.4, transition: 'opacity 0.15s' }}
                 strokeLinecap="round" strokeLinejoin="round">
                 <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
                 <circle cx="12" cy="13" r="4" />
               </svg>
-              <span style={{ fontSize: 12, opacity: 0.45, fontFamily: 'sans-serif', fontWeight: 600 }}>
-                {isOwner ? 'Add photo' : ''}
+              <span style={{ fontSize: 12, opacity: dragOver ? 0.7 : 0.45, fontFamily: 'sans-serif', fontWeight: 600, transition: 'opacity 0.15s' }}>
+                {isOwner ? (dragOver ? 'Drop to add' : 'Add photo') : ''}
               </span>
             </div>
           )
