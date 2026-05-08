@@ -2,7 +2,7 @@
 
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import TextStyle from '@tiptap/extension-text-style'
+import { TextStyle } from '@tiptap/extension-text-style'
 import { Color } from '@tiptap/extension-color'
 import TextAlign from '@tiptap/extension-text-align'
 import Underline from '@tiptap/extension-underline'
@@ -176,7 +176,6 @@ export function RichChapterEditor({ chapterId, subjectName, isOwner, initialHtml
     extensions: [
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
-        horizontalRule: true,
       }),
       TextStyle,
       Color,
@@ -363,11 +362,11 @@ export function RichChapterEditor({ chapterId, subjectName, isOwner, initialHtml
       >
         {editor && isOwner && (
           <div
-            className="flex flex-wrap items-center gap-0.5 px-2 py-1"
-            style={{ background: '#F0EBE0', border: '2px solid #1C1917', borderBottom: 'none' }}
+            className="flex items-center gap-0.5 px-1 sm:px-2 py-1 overflow-x-auto"
+            style={{ background: '#F0EBE0', border: '2px solid #1C1917', borderBottom: 'none', scrollbarWidth: 'none' }}
           >
             {/* Text type dropdown */}
-            <div className="relative">
+            <div className="relative flex-shrink-0">
               <select
                 value={
                   editor.isActive('heading', { level: 1 }) ? '1' :
@@ -379,18 +378,18 @@ export function RichChapterEditor({ chapterId, subjectName, isOwner, initialHtml
                   if (val === '0') editor.chain().focus().setParagraph().run()
                   else editor.chain().focus().setHeading({ level: parseInt(val) as 1|2|3 }).run()
                 }}
-                className="h-7 px-2 pr-5 text-xs font-bold bg-transparent border border-ink/20 text-ink cursor-pointer appearance-none"
+                className="h-7 px-1.5 sm:px-2 pr-4 sm:pr-5 text-[10px] sm:text-xs font-bold bg-transparent border border-ink/20 text-ink cursor-pointer appearance-none"
                 style={{ fontFamily: 'inherit' }}
               >
                 <option value="0">¶ Normal</option>
                 <option value="1">H1 Title</option>
                 <option value="2">H2 Heading</option>
-                <option value="3">H3 Subheading</option>
+                <option value="3">H3 Sub</option>
               </select>
-              <span className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none text-[9px]">▾</span>
+              <span className="absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none text-[9px]">▾</span>
             </div>
 
-            <div className="w-px h-5 bg-ink/20 mx-1" />
+            <div className="w-px h-5 bg-ink/20 mx-0.5 sm:mx-1 flex-shrink-0" />
 
             {/* Bold / Italic / Underline */}
             <ToolBtn onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive('bold')} title="Bold (⌘B)">
@@ -403,7 +402,7 @@ export function RichChapterEditor({ chapterId, subjectName, isOwner, initialHtml
               <u>U</u>
             </ToolBtn>
 
-            <div className="w-px h-5 bg-ink/20 mx-1" />
+            <div className="w-px h-5 bg-ink/20 mx-0.5 sm:mx-1 flex-shrink-0" />
 
             {/* Alignment */}
             <ToolBtn onClick={() => editor.chain().focus().setTextAlign('left').run()} active={editor.isActive({ textAlign: 'left' })} title="Align left">
@@ -416,7 +415,7 @@ export function RichChapterEditor({ chapterId, subjectName, isOwner, initialHtml
               →
             </ToolBtn>
 
-            <div className="w-px h-5 bg-ink/20 mx-1" />
+            <div className="w-px h-5 bg-ink/20 mx-0.5 sm:mx-1 flex-shrink-0" />
 
             {/* Blockquote */}
             <ToolBtn onClick={() => editor.chain().focus().toggleBlockquote().run()} active={editor.isActive('blockquote')} title="Blockquote">
@@ -428,7 +427,7 @@ export function RichChapterEditor({ chapterId, subjectName, isOwner, initialHtml
               —
             </ToolBtn>
 
-            <div className="w-px h-5 bg-ink/20 mx-1" />
+            <div className="w-px h-5 bg-ink/20 mx-0.5 sm:mx-1 flex-shrink-0" />
 
             {/* Text color picker */}
             <div className="relative">
@@ -489,13 +488,19 @@ export function RichChapterEditor({ chapterId, subjectName, isOwner, initialHtml
               )}
             </div>
 
-            {/* Spacer + meta */}
-            <div className="flex-1" />
+          </div>
+        )}
+        {/* Status row below toolbar — not inside the scroll area */}
+        {editor && isOwner && showToolbar && (
+          <div
+            className="flex items-center justify-end gap-3 px-2 py-0.5"
+            style={{ background: '#F0EBE0', border: '2px solid #1C1917', borderTop: '1px solid #D4CCC4', borderBottom: 'none' }}
+          >
             {wordCount > 0 && (
               <span className="text-[9px] text-ink-faint">{wordCount} {wordCount === 1 ? 'word' : 'words'}</span>
             )}
-            {!saved && <span className="text-[9px] text-ink-faint ml-2">saving…</span>}
-            {saved && focused && <span className="text-[9px] text-emerald-600 ml-2">✓ saved</span>}
+            {!saved && <span className="text-[9px] text-ink-faint">saving…</span>}
+            {saved && focused && <span className="text-[9px] text-emerald-600">✓ saved</span>}
           </div>
         )}
       </div>

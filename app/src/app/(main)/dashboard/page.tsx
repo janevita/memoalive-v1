@@ -24,14 +24,14 @@ export default async function DashboardPage() {
   const firstName = user?.name.split(' ')[0] ?? 'there'
 
   return (
-    <div className="max-w-4xl mx-auto px-5 py-10">
+    <div className="max-w-4xl mx-auto px-4 sm:px-5 py-6 sm:py-10">
       {/* Welcome header */}
-      <div className="mb-10">
+      <div className="mb-8 sm:mb-10">
         <p className="text-eyebrow mb-1">Good to see you, {firstName}</p>
-        <h1 className="font-serif text-4xl font-bold text-ink leading-tight">
+        <h1 className="font-serif text-3xl sm:text-4xl font-bold text-ink leading-tight">
           Your memories
         </h1>
-        <p className="text-ink-soft mt-2">
+        <p className="text-ink-soft mt-2 text-sm sm:text-base">
           Pick an event to dive in, or create a new one.
         </p>
       </div>
@@ -64,7 +64,7 @@ export default async function DashboardPage() {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {groups.map(group => (
               <GroupCard key={group.id} group={group} />
             ))}

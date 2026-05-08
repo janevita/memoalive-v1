@@ -149,7 +149,10 @@ export function Nav() {
       </header>
 
       {/* Mobile bottom nav */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-canvas flex items-stretch" style={{ borderTop: '2.5px solid #1C1917' }}>
+      <nav
+        className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-canvas flex items-stretch"
+        style={{ borderTop: '2.5px solid #1C1917', paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
         {navItems.map(({ href, label, icon: Icon, primary }) => {
           const active = pathname === href || pathname.startsWith(href + '/')
           if (primary) {
@@ -182,11 +185,14 @@ export function Nav() {
             </Link>
           )
         })}
-        <div className="absolute bottom-0 inset-x-0 h-safe-bottom bg-canvas" />
       </nav>
 
-      {/* Mobile bottom nav clearance */}
-      <div className="md:hidden h-16" aria-hidden />
+      {/* Mobile bottom nav clearance — accounts for safe area on notch phones */}
+      <div
+        className="md:hidden flex-shrink-0"
+        style={{ height: 'calc(4rem + env(safe-area-inset-bottom))' }}
+        aria-hidden
+      />
     </>
   )
 }

@@ -44,8 +44,8 @@ export default function NewJournalPage() {
   return (
     <div className="min-h-screen bg-canvas">
       {/* Header */}
-      <div className="px-6 py-6 border-b-[2.5px] border-ink" style={{ background: '#1C1917' }}>
-        <div className="max-w-2xl mx-auto flex items-center gap-4">
+      <div className="px-4 sm:px-6 py-4 sm:py-6 border-b-[2.5px] border-ink" style={{ background: '#1C1917' }}>
+        <div className="max-w-2xl mx-auto flex items-center gap-3 sm:gap-4">
           <Link href={ROUTES.journals} className="text-white/50 hover:text-white transition-colors text-sm font-semibold">
             ← Journals
           </Link>
@@ -54,13 +54,13 @@ export default function NewJournalPage() {
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-6 py-10">
-        <div className="flex gap-10">
-          {/* Live cover preview */}
-          <div className="hidden sm:block flex-shrink-0">
-            <p className="text-[10px] font-bold uppercase tracking-[2px] text-ink-soft mb-3">Preview</p>
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+        <div className="flex flex-col sm:flex-row gap-6 sm:gap-10">
+          {/* Live cover preview — shown above form on mobile, beside it on desktop */}
+          <div className="flex-shrink-0 flex sm:block items-center gap-4">
+            <p className="text-[10px] font-bold uppercase tracking-[2px] text-ink-soft mb-0 sm:mb-3">Preview</p>
             <div
-              className="w-32 relative"
+              className="w-20 sm:w-32 relative"
               style={{
                 background: coverColor,
                 border: '3px solid rgba(0,0,0,0.5)',
@@ -94,9 +94,9 @@ export default function NewJournalPage() {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="flex-1 space-y-6">
+          <form onSubmit={handleSubmit} className="flex-1 space-y-5 sm:space-y-6">
             <div>
-              <h1 className="font-serif text-3xl font-bold text-ink mb-1">Create a journal</h1>
+              <h1 className="font-serif text-2xl sm:text-3xl font-bold text-ink mb-1">Create a journal</h1>
               <p className="text-ink-soft text-sm">A life story, told beautifully.</p>
             </div>
 

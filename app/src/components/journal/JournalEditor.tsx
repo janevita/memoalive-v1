@@ -107,7 +107,7 @@ function ChapterPanel({
       </div>
 
       {/* Rich text editor — one per chapter */}
-      <div className="max-w-[700px]">
+      <div className="max-w-full sm:max-w-[700px]">
         <RichChapterEditor
           chapterId={chapter.id}
           subjectName={subjectName}
@@ -149,10 +149,10 @@ export function JournalEditor({ journal, isOwner }: Props) {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-10 flex gap-8">
+    <div className="max-w-4xl mx-auto px-3 sm:px-6 py-6 sm:py-10 flex flex-col md:flex-row gap-6 md:gap-8">
 
-      {/* Sidebar */}
-      <aside className="hidden lg:block w-48 flex-shrink-0">
+      {/* Sidebar — hidden on mobile, visible from md up */}
+      <aside className="hidden md:block w-40 flex-shrink-0">
         <div className="sticky top-24">
           <p className="text-[10px] font-bold uppercase tracking-[2px] text-ink-soft mb-3">Chapters</p>
           <nav className="space-y-1">
@@ -179,21 +179,41 @@ export function JournalEditor({ journal, isOwner }: Props) {
       {/* Content */}
       <main className="flex-1 min-w-0">
         {/* Cover strip */}
-        <div className="mb-10 px-6 py-8 relative overflow-hidden"
-          style={{ background: journal.coverColor, border: '3px solid rgba(0,0,0,0.4)', boxShadow: '6px 6px 0 rgba(0,0,0,0.35)' }}>
-          <div className="absolute left-0 inset-y-0 w-4" style={{ background: 'rgba(0,0,0,0.2)' }} />
+        <div className="mb-8 sm:mb-10 px-4 py-6 sm:px-6 sm:py-8 relative overflow-hidden"
+          style={{ background: journal.coverColor, border: '3px solid rgba(0,0,0,0.4)', boxShadow: '4px 4px 0 rgba(0,0,0,0.35)' }}>
+          <div className="absolute left-0 inset-y-0 w-3 sm:w-4" style={{ background: 'rgba(0,0,0,0.2)' }} />
           <div className="absolute inset-0 opacity-10" style={{
             backgroundImage: 'repeating-linear-gradient(45deg,rgba(255,255,255,0.3) 0,rgba(255,255,255,0.3) 1px,transparent 0,transparent 50%)',
             backgroundSize: '10px 10px',
           }} />
-          <div className="relative pl-4">
-            <p className="text-white/60 text-xs font-semibold uppercase tracking-widest mb-2">
+          <div className="relative pl-3 sm:pl-4">
+            <p className="text-white/60 text-[10px] sm:text-xs font-semibold uppercase tracking-widest mb-1 sm:mb-2">
               Life Stories · {journal.year}
             </p>
-            <h1 className="font-serif text-3xl font-bold text-white mb-1">{journal.title}</h1>
-            <p className="text-white/70 text-sm">The story of {journal.subjectName}</p>
+            <h1 className="font-serif text-2xl sm:text-3xl font-bold text-white mb-1">{journal.title}</h1>
+            <p className="text-white/70 text-xs sm:text-sm">The story of {journal.subjectName}</p>
           </div>
         </div>
+
+        {/* Mobile chapter nav strip — horizontal scroll, visible only on small screens */}
+        {chapters.length > 1 && isOwner && (
+          <div className="md:hidden flex gap-2 overflow-x-auto pb-1 mb-6 scrollbar-none">
+            {chapters.map(c => (
+              <a key={c.id} href={`#chapter-${c.id}`}
+                className="flex-shrink-0 px-3 py-1.5 text-xs font-semibold text-ink-soft hover:text-ink border border-ink/20 whitespace-nowrap"
+                style={{ background: '#F5F0E8' }}>
+                {c.title}
+              </a>
+            ))}
+            {isOwner && (
+              <button onClick={handleAddChapter} disabled={addingChapter}
+                className="flex-shrink-0 px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+                style={{ background: '#F5F0E8', border: '1.5px dashed #D4CCC4' }}>
+                + Chapter
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Chapters */}
         {chapters.length === 0 ? (
