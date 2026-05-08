@@ -126,6 +126,52 @@ export async function deleteBlock(blockId: string) {
   await db.from('journal_blocks').delete().eq('id', blockId)
 }
 
+// ── Rich content (single-block per chapter) ───────────────────────────────────
+
+/**
+ * Save the full rich HTML for a chapter into a single canonical paragraph block.
+ * Consolidates any existing multi-block chapters on first save.
+ */
+export async function upsertChapterContent(
+  chapterId: string,
+  html: string,
+): Promise<{ error?: string }> {
+  const db = await createClient()
+
+  const { data: blocks, error: fetchErr } = await db
+    .from('journal_blocks')
+    .select('id, block_type')
+    .eq('chapter_id', chapterId)
+    .order('block_order', { ascending: true })
+
+  if (fetchErr) return { error: fetchErr.message }
+
+  if (blocks && blocks.length > 0) {
+    const first = blocks[0]!
+    const extras = blocks.slice(1)
+
+    // Update first block with full rich HTML
+    const { error: updateErr } = await db
+      .from('journal_blocks')
+      .update({ content: html, block_type: 'paragraph', updated_at: new Date().toISOString() })
+      .eq('id', first.id)
+    if (updateErr) return { error: updateErr.message }
+
+    // Consolidate: delete extra blocks (old multi-block chapters)
+    if (extras.length > 0) {
+      await db.from('journal_blocks').delete().in('id', extras.map(b => b.id))
+    }
+  } else {
+    // No blocks yet — create the canonical rich block
+    const { error: insertErr } = await db
+      .from('journal_blocks')
+      .insert({ chapter_id: chapterId, block_type: 'paragraph', block_order: 0, content: html })
+    if (insertErr) return { error: insertErr.message }
+  }
+
+  return {}
+}
+
 // ── AI Writing ────────────────────────────────────────────────────────────────
 
 export async function aiGrammarCorrect(text: string): Promise<{ result?: string; error?: string }> {
