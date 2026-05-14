@@ -11,6 +11,7 @@ export async function createJournal(
   subjectName: string,
   title: string,
   coverColor: string,
+  genre?: string,
 ) {
   const db = await createClient()
   const { data: { user } } = await db.auth.getUser()
@@ -29,7 +30,7 @@ export async function createJournal(
 
   const { data, error } = await db
     .from('journals')
-    .insert({ created_by: user.id, subject_name: subjectName, title, cover_color: coverColor, cover_style: 'classic', year })
+    .insert({ created_by: user.id, subject_name: subjectName, title, cover_color: coverColor, cover_style: 'classic', year, ...(genre && { genre }) })
     .select('id')
     .single()
   if (error) return { error: error.message }
@@ -63,6 +64,19 @@ export async function deleteJournal(journalId: string) {
   const db = await createClient()
   const { error } = await db.from('journals').delete().eq('id', journalId)
   return { error: error?.message }
+}
+
+export async function toggleJournalSharing(
+  journalId: string,
+  isPublic: boolean,
+): Promise<{ error?: string }> {
+  const db = await createClient()
+  const { error } = await db
+    .from('journals')
+    .update({ is_public: isPublic, updated_at: new Date().toISOString() })
+    .eq('id', journalId)
+  if (error) return { error: error.message }
+  return {}
 }
 
 // ── Chapter CRUD ──────────────────────────────────────────────────────────────

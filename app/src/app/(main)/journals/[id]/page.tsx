@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getJournal } from '@/lib/data/journals'
 import { JournalEditor } from '@/components/journal/JournalEditor'
+import { JournalActions } from './JournalActions'
 import { ROUTES } from '@/lib/constants'
 import Link from 'next/link'
 
@@ -43,6 +44,7 @@ export default async function JournalPage({ params }: { params: { id: string } }
             >
               🖨 <span className="hidden sm:inline">Print</span>
             </Link>
+            <JournalActions journal={journal} isOwner={isOwner} />
           </div>
         </div>
       </div>

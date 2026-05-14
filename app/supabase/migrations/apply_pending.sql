@@ -804,3 +804,49 @@ create index if not exists idx_journals_user on public.journals(created_by);
 create index if not exists idx_journals_year on public.journals(created_by, year);
 create index if not exists idx_journal_chapters_journal on public.journal_chapters(journal_id);
 create index if not exists idx_journal_blocks_chapter on public.journal_blocks(chapter_id, block_order);
+
+
+-- ──────────────────────────────────────────────────────────────────────────────
+-- 011 — Reels table + journal genre + scrapbook genre
+-- ──────────────────────────────────────────────────────────────────────────────
+
+create table if not exists public.reels (
+  id           uuid        primary key default gen_random_uuid(),
+  owner_id     uuid        not null references public.profiles(id) on delete cascade,
+  title        text        not null default 'My Reel',
+  genre        text        not null,
+  template     text,
+  music        text,
+  photos       jsonb       not null default '[]'::jsonb,
+  stickers     jsonb       not null default '[]'::jsonb,
+  share_token  text        unique default encode(gen_random_bytes(12), 'hex'),
+  is_shared    boolean     not null default false,
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now()
+);
+
+create index if not exists reels_owner_id_idx    on public.reels(owner_id);
+create index if not exists reels_share_token_idx on public.reels(share_token);
+
+alter table public.reels enable row level security;
+
+drop policy if exists "owner_all_reels"  on public.reels;
+drop policy if exists "public_read_reel" on public.reels;
+
+create policy "owner_all_reels" on public.reels
+  for all using (auth.uid() = owner_id);
+
+create policy "public_read_reel" on public.reels
+  for select using (is_shared = true);
+
+do $$ begin
+  if not exists (select 1 from information_schema.columns
+    where table_schema='public' and table_name='journals' and column_name='genre')
+  then alter table public.journals add column genre text; end if;
+end $$;
+
+do $$ begin
+  if not exists (select 1 from information_schema.columns
+    where table_schema='public' and table_name='scrapbooks' and column_name='genre')
+  then alter table public.scrapbooks add column genre text; end if;
+end $$;

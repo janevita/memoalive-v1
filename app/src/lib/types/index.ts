@@ -453,10 +453,43 @@ export interface Journal {
   coverStyle:  string
   year:        number
   isPublic:    boolean
+  genre?:      string
   createdAt:   string
   updatedAt:   string
 }
 
 export interface JournalWithChapters extends Journal {
   chapters: JournalChapter[]
+}
+
+// ── Reels ─────────────────────────────────────────────────────────────────────
+
+export type ReelGenre    = 'romance' | 'drama' | 'adventure' | 'comedy' | 'documentary'
+export type ReelTemplate = 'day' | 'thennow' | 'family' | 'journey' | 'milestones'
+export type ReelMusic    = 'piano' | 'uplifting' | 'orchestra' | 'jazz' | 'acoustic'
+
+export interface ReelPhoto {
+  url:     string
+  caption?: string
+}
+
+export interface ReelSticker {
+  emoji: string
+  x:     number   // percent (0–100)
+  y:     number   // percent (0–100)
+}
+
+export interface Reel {
+  id:         string
+  ownerId:    string
+  title:      string
+  genre:      ReelGenre
+  template:   ReelTemplate | null
+  music:      ReelMusic | null
+  photos:     ReelPhoto[]
+  stickers:   ReelSticker[]
+  shareToken: string
+  isShared:   boolean
+  createdAt:  string
+  updatedAt:  string
 }

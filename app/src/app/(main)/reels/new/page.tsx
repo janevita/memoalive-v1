@@ -2,7 +2,10 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { ROUTES } from '@/lib/constants'
+import { createClient } from '@/lib/supabase/client'
+import { createReel } from '@/lib/actions/reels'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -78,6 +81,9 @@ const SLIDE_DURATION = 3000
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function NewReelPage() {
+  const router = useRouter()
+
+  const [title, setTitle] = useState('My Reel')
   const [reel, setReel] = useState<ReelState>({
     genre: null, template: null, music: null,
     sticker: null, photos: Array(SLOT_COUNT).fill(null), stickers: [],
@@ -87,6 +93,8 @@ export default function NewReelPage() {
   const [activeStickerPack, setActiveStickerPack] = useState('Classic')
   const [currentSlide, setCurrentSlide]       = useState(0)
   const [isPlaying, setIsPlaying]             = useState(false)
+  const [saving, setSaving]                   = useState(false)
+  const [saveError, setSaveError]             = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const pendingSlot  = useRef<number | null>(null)
   const playTimer    = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -116,6 +124,77 @@ export default function NewReelPage() {
   function togglePlay() {
     if (!isReady) return
     setIsPlaying(p => !p)
+  }
+
+  // ── Save Reel ─────────────────────────────────────────────────────────────────
+  async function handleSave() {
+    if (!reel.genre) {
+      setSaveError('Please select a genre before saving.')
+      return
+    }
+    if (photos.length === 0) {
+      setSaveError('Please add at least one photo before saving.')
+      return
+    }
+
+    setSaving(true)
+    setSaveError(null)
+
+    try {
+      const supabase = createClient()
+      const uploadedPhotos: { url: string }[] = []
+
+      for (let i = 0; i < reel.photos.length; i++) {
+        const photo = reel.photos[i]
+        if (!photo) continue
+
+        // If it's a local data URL, upload to Supabase storage
+        if (photo.url.startsWith('data:')) {
+          const response = await fetch(photo.url)
+          const blob = await response.blob()
+          const path = `reels/${Date.now()}-${i}.jpg`
+
+          const { error: uploadError } = await supabase.storage
+            .from('memory-media')
+            .upload(path, blob, { contentType: 'image/jpeg', upsert: false })
+
+          if (uploadError) {
+            setSaveError(`Failed to upload photo ${i + 1}: ${uploadError.message}`)
+            setSaving(false)
+            return
+          }
+
+          const { data: publicData } = supabase.storage
+            .from('memory-media')
+            .getPublicUrl(path)
+
+          uploadedPhotos.push({ url: publicData.publicUrl })
+        } else {
+          // Already a remote URL
+          uploadedPhotos.push({ url: photo.url })
+        }
+      }
+
+      const result = await createReel({
+        title,
+        genre: reel.genre,
+        template: reel.template,
+        music: reel.music,
+        photos: uploadedPhotos,
+        stickers: reel.stickers,
+      })
+
+      if (result.error || !result.id) {
+        setSaveError(result.error ?? 'Failed to save reel.')
+        setSaving(false)
+        return
+      }
+
+      router.push(ROUTES.reel(result.id))
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'An unexpected error occurred.')
+      setSaving(false)
+    }
   }
 
   // ── Photos ───────────────────────────────────────────────────────────────────
@@ -183,23 +262,52 @@ export default function NewReelPage() {
           <p className="font-serif text-base font-bold text-ink leading-tight">🎬 Create a Memory Reel</p>
           <p className="text-xs text-ink-soft hidden sm:block">Choose a genre, add photos, stickers &amp; music</p>
         </div>
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
           <button
             onClick={togglePlay}
             disabled={!isReady}
-            className="btn btn-primary btn-sm"
+            className="btn btn-sm"
             style={{ fontSize: 11, letterSpacing: '0.05em', fontWeight: 700, opacity: isReady ? 1 : 0.4 }}
           >
             {isPlaying ? '⏸ PAUSE' : '▶ PLAY REEL'}
           </button>
+          <button
+            onClick={handleSave}
+            disabled={saving || !isReady}
+            className="btn btn-primary btn-sm"
+            style={{ fontSize: 11, letterSpacing: '0.05em', fontWeight: 700, opacity: (saving || !isReady) ? 0.6 : 1 }}
+          >
+            {saving ? 'Saving…' : '💾 SAVE REEL'}
+          </button>
         </div>
       </nav>
+
+      {/* Save error */}
+      {saveError && (
+        <div className="px-4 sm:px-6 py-2 bg-red-50 text-red-700 text-sm flex items-center justify-between" style={{ borderBottom: '1.5px solid #fca5a5' }}>
+          <span>{saveError}</span>
+          <button onClick={() => setSaveError(null)} className="text-red-400 hover:text-red-700 ml-4 text-lg leading-none">✕</button>
+        </div>
+      )}
 
       {/* Layout */}
       <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
 
         {/* LEFT: Builder */}
         <aside className="lg:w-[340px] lg:flex-shrink-0 bg-canvas border-b lg:border-b-0 lg:border-r border-[#E7E0D8] overflow-y-auto">
+
+          {/* Title input */}
+          <div className="px-4 py-4 border-b border-[#E7E0D8]">
+            <label className="block text-[11px] font-bold tracking-widest text-ink-soft mb-2">TITLE</label>
+            <input
+              type="text"
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              placeholder="My Reel"
+              className="w-full px-3 py-2 text-sm font-serif font-semibold text-ink bg-white rounded focus:outline-none focus:ring-2 focus:ring-ink/20"
+              style={{ border: '2px solid #E7E0D8' }}
+            />
+          </div>
 
           {/* Genre */}
           <Section
@@ -416,7 +524,7 @@ export default function NewReelPage() {
                   )}
                   <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center p-6 text-center">
                     <p className="font-serif text-white font-bold text-2xl sm:text-3xl drop-shadow-lg">
-                      {reel.template ? TEMPLATE_NAMES[reel.template] : 'A Memory Reel'}
+                      {title || (reel.template ? TEMPLATE_NAMES[reel.template] : 'A Memory Reel')}
                     </p>
                     {reel.genre && (
                       <p className="text-white/60 text-xs tracking-widest uppercase mt-2">

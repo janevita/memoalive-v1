@@ -27,6 +27,7 @@ import {
   createPage, deletePage, createElement, updateElement, deleteElement,
   updateScrapbook, deleteScrapbook, toggleScrapbookSharing,
 } from '@/lib/actions/scrapbooks'
+import { ShareSheet } from '@/components/share/ShareSheet'
 import { StickerPicker } from './StickerPicker'
 import { CommentPanel } from './CommentPanel'
 import { createUploadSession, getSessionPhotos, type SessionPhoto } from '@/lib/actions/upload'
@@ -568,19 +569,6 @@ export function ScrapbookCanvas({ scrapbook, isOwner, pickablePhotos }: Props) {
     setPageIdx(Math.max(0, currentPageIdx - 1))
   }
 
-  // ── Sharing ───────────────────────────────────────────────────────────────
-
-  async function handleToggleShare() {
-    setShareToggling(true)
-    const result = await toggleScrapbookSharing(scrapbook.id, !isShared)
-    setShareToggling(false)
-    if (!result.error) setIsShared(!isShared)
-  }
-
-  const shareUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/scrapbooks/s/${shareToken}`
-    : `/scrapbooks/s/${shareToken}`
-
   // ── Delete scrapbook ──────────────────────────────────────────────────────
 
   async function handleDeleteScrapbook() {
@@ -688,36 +676,21 @@ export function ScrapbookCanvas({ scrapbook, isOwner, pickablePhotos }: Props) {
         </div>
       )}
 
-      {/* ── Share modal ── */}
-      {showShareModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-5">
-          <div className="card p-6 max-w-md w-full space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="font-serif text-lg font-semibold text-ink">Share scrapbook</h2>
-              <button type="button" onClick={() => setShowShareModal(false)} className="text-ink-faint hover:text-ink">✕</button>
-            </div>
-            <p className="text-sm text-ink-soft">Anyone with this link can view your scrapbook and leave comments.</p>
-
-            <div className="flex items-center gap-2">
-              <div className="flex-1 rounded-xl bg-ink/5 px-3 py-2 text-xs text-ink font-mono truncate">
-                {isShared ? shareUrl : '(Enable sharing to get a link)'}
-              </div>
-              {isShared && (
-                <button type="button"
-                  onClick={() => navigator.clipboard.writeText(shareUrl)}
-                  className="btn btn-ghost btn-sm btn-pill border border-ink/15">
-                  Copy
-                </button>
-              )}
-            </div>
-
-            <button type="button" onClick={handleToggleShare} disabled={shareToggling}
-              className={`btn btn-pill w-full ${isShared ? 'bg-ink/10 text-ink hover:bg-ink/15' : 'btn-primary'}`}>
-              {shareToggling ? '…' : isShared ? 'Disable sharing' : 'Enable sharing & copy link'}
-            </button>
-          </div>
-        </div>
-      )}
+      {/* ── Share sheet ── */}
+      <ShareSheet
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        title={scrapbook.title}
+        path={`/scrapbooks/s/${shareToken}`}
+        isShared={isShared}
+        onToggleShared={async (shared) => {
+          setShareToggling(true)
+          const result = await toggleScrapbookSharing(scrapbook.id, shared)
+          setShareToggling(false)
+          if (!result.error) setIsShared(shared)
+        }}
+        featureLabel="scrapbook"
+      />
 
       {/* ── Main area ── */}
       <div className="flex flex-1 overflow-hidden">

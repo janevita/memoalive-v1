@@ -22,6 +22,7 @@ export async function createScrapbook(
 
   const description = (formData.get('description') as string | null)?.trim() || null
   const template    = (formData.get('template')    as string | null) ?? 'vintage-kraft'
+  const genre       = (formData.get('genre')       as string | null) ?? null
   const id = randomUUID()
 
   const { error } = await supabase.from('scrapbooks').insert({
@@ -30,6 +31,7 @@ export async function createScrapbook(
     title,
     description,
     template,
+    ...(genre && { genre }),
   } as any)
 
   if (error) return { error: error.message }

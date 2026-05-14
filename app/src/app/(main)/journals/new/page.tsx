@@ -6,6 +6,15 @@ import Link from 'next/link'
 import { createJournal } from '@/lib/actions/journals'
 import { ROUTES } from '@/lib/constants'
 
+const JOURNAL_GENRES = [
+  { value: 'romance',       icon: '💕', label: 'Romance',       desc: 'Love stories & relationships' },
+  { value: 'drama',         icon: '🎭', label: 'Drama',         desc: 'Life\'s challenges & triumphs' },
+  { value: 'adventure',     icon: '🌍', label: 'Adventure',     desc: 'Travel & exploration' },
+  { value: 'comedy',        icon: '😄', label: 'Comedy',        desc: 'Lighthearted & joyful memories' },
+  { value: 'documentary',   icon: '📽️', label: 'Documentary',   desc: 'Real life, recorded truthfully' },
+  { value: 'coming-of-age', icon: '🌱', label: 'Coming of Age', desc: 'Growth & milestones' },
+]
+
 const COVER_COLORS = [
   { value: '#FF5C1A', label: 'Sunrise',  dark: '#B53C00' },
   { value: '#FF2D78', label: 'Blossom',  dark: '#B5005A' },
@@ -22,6 +31,7 @@ export default function NewJournalPage() {
   const [subjectName, setSubjectName] = useState('')
   const [title, setTitle] = useState('')
   const [coverColor, setCoverColor] = useState(COVER_COLORS[0]!.value)
+  const [genre, setGenre] = useState('drama')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -32,7 +42,7 @@ export default function NewJournalPage() {
     if (!subjectName.trim() || !title.trim()) return
     setLoading(true)
     setError('')
-    const result = await createJournal(subjectName.trim(), title.trim(), coverColor)
+    const result = await createJournal(subjectName.trim(), title.trim(), coverColor, genre)
     if (result.error) {
       setError(result.error)
       setLoading(false)
@@ -154,6 +164,31 @@ export default function NewJournalPage() {
                 ))}
               </div>
               <p className="text-xs text-ink-faint mt-2">{selectedColor.label}</p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-ink mb-3">
+                Cinematic genre
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {JOURNAL_GENRES.map(g => (
+                  <button
+                    key={g.value}
+                    type="button"
+                    onClick={() => setGenre(g.value)}
+                    className="flex flex-col items-start p-3 text-left transition-transform hover:-translate-y-0.5"
+                    style={{
+                      border: genre === g.value ? '2.5px solid #FF5C1A' : '2px solid #E7E0D8',
+                      boxShadow: genre === g.value ? '3px 3px 0 #B53C00' : '2px 2px 0 #D4C9B0',
+                      background: genre === g.value ? '#FFF5F0' : '#F5F0E8',
+                    }}
+                  >
+                    <span className="text-2xl mb-1">{g.icon}</span>
+                    <span className="text-xs font-bold text-ink">{g.label}</span>
+                    <span className="text-[10px] text-ink-soft mt-0.5">{g.desc}</span>
+                  </button>
+                ))}
+              </div>
             </div>
 
             {error && (
