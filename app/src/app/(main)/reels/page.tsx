@@ -90,7 +90,7 @@ export default async function ReelsPage() {
       {reels.length === 0 ? (
         <>
           {/* Empty state */}
-          <div className="card p-12 text-center mb-8">
+          <div className="card p-8 sm:p-12 text-center mb-8">
             <div className="text-6xl mb-4">🎬</div>
             <h3 className="font-serif text-lg font-semibold text-ink mb-2">No reels yet</h3>
             <p className="text-sm text-ink-soft mb-6 max-w-sm mx-auto">

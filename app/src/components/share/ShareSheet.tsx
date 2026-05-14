@@ -118,7 +118,7 @@ export function ShareSheet({
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '2px solid #E7E0D8' }}>
           <h2 className="font-serif text-lg font-bold text-ink">Share</h2>
-          <button onClick={onClose} className="text-ink-soft hover:text-ink transition-colors text-xl leading-none">✕</button>
+          <button onClick={onClose} className="text-ink-soft hover:text-ink transition-colors w-10 h-10 flex items-center justify-center -mr-2">✕</button>
         </div>
 
         <div className="p-5 space-y-5">
@@ -138,12 +138,12 @@ export function ShareSheet({
               onClick={handleToggle}
               disabled={toggling}
               aria-label="Toggle public sharing"
-              className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none"
+              className="relative inline-flex h-8 w-12 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none"
               style={{ background: shared ? '#FF5C1A' : '#D4C9B0', border: '2px solid #1C1917' }}
             >
               <span
                 className="translate-x-0 inline-block h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ease-in-out"
-                style={{ transform: shared ? 'translateX(20px)' : 'translateX(2px)', marginTop: 2 }}
+                style={{ transform: shared ? 'translateX(20px)' : 'translateX(2px)', marginTop: 6 }}
               />
             </button>
           </div>

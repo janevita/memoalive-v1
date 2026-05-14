@@ -702,7 +702,7 @@ export function ScrapbookCanvas({ scrapbook, isOwner, pickablePhotos }: Props) {
           <div className="flex-1 p-4 flex flex-col items-center">
             <div ref={containerRef} className="w-full max-w-[1200px]">
               {/* Canvas outer: reserves correct height as scale changes */}
-              <div style={{ position: 'relative', width: '100%', height: CH * scale }}>
+              <div style={{ position: 'relative', width: '100%', height: CH * scale }} className="min-h-[200px] sm:min-h-0">
 
                 {currentPage ? (
                   <div
@@ -816,7 +816,14 @@ export function ScrapbookCanvas({ scrapbook, isOwner, pickablePhotos }: Props) {
 
         {/* ── Right: sticker/comment/photo panels ── */}
         {(showStickers || showComments || showPhotoPicker) && (
-          <div className="w-72 flex-shrink-0 border-l border-ink/8 overflow-y-auto">
+          <div className={`
+            fixed sm:relative inset-x-0 bottom-0 sm:bottom-auto sm:inset-x-auto
+            w-full sm:w-72 flex-shrink-0
+            bg-canvas z-30 sm:z-auto
+            sm:max-h-none max-h-[60vh] overflow-y-auto
+            border-t-[2.5px] sm:border-t-0 sm:border-l border-ink sm:border-ink/8
+            transition-transform translate-y-0
+          `}>
             {showPhotoPicker && (
               <PhotoPickerPanel
                 photos={pickablePhotos}

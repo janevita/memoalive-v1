@@ -153,7 +153,7 @@ export default async function ReelPage({ params }: { params: { id: string } }) {
         </div>
 
         {/* Sidebar */}
-        <aside className="w-full lg:w-64 flex-shrink-0 space-y-4">
+        <aside className="w-full lg:w-64 flex-shrink-0 space-y-4 mt-2 lg:mt-0">
           {/* Photo strip */}
           {photos.length > 0 && (
             <div className="card p-4">

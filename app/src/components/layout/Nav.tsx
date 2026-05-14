@@ -104,13 +104,13 @@ function LogoMark() {
   )
 }
 
-// Mobile bottom nav: 5 items — Home, Memories, Add (primary), Journals, Profile
+// Mobile bottom nav: 5 items — Home, Journals, Add (primary), Scrapbooks, Reels
 const mobileNavItems = [
-  { href: ROUTES.dashboard,  label: 'Home',     icon: HomeIcon },
-  { href: ROUTES.memories,   label: 'Memories', icon: MemoriesIcon },
-  { href: ROUTES.newMemory,  label: 'Add',      icon: PlusIcon, primary: true },
-  { href: ROUTES.journals,   label: 'Journals', icon: JournalIcon },
-  { href: ROUTES.profile,    label: 'Profile',  icon: UserIcon },
+  { href: ROUTES.dashboard,  label: 'Home',       icon: HomeIcon },
+  { href: ROUTES.journals,   label: 'Journals',   icon: JournalIcon },
+  { href: ROUTES.newMemory,  label: 'Add',        icon: PlusIcon, primary: true },
+  { href: ROUTES.scrapbooks, label: 'Scrapbooks', icon: ScrapbookIcon },
+  { href: ROUTES.reels,      label: 'Reels',      icon: ReelIcon },
 ]
 
 // Desktop top nav (all items except primary Add)

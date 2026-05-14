@@ -196,7 +196,7 @@ export function JournalEditor({ journal, isOwner }: Props) {
         </div>
 
         {/* Mobile chapter nav strip — horizontal scroll, visible only on small screens */}
-        {chapters.length > 1 && isOwner && (
+        {chapters.length > 1 && (
           <div className="md:hidden flex gap-2 overflow-x-auto pb-1 mb-6 scrollbar-none">
             {chapters.map(c => (
               <a key={c.id} href={`#chapter-${c.id}`}
@@ -208,7 +208,7 @@ export function JournalEditor({ journal, isOwner }: Props) {
             {isOwner && (
               <button onClick={handleAddChapter} disabled={addingChapter}
                 className="flex-shrink-0 px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
-                style={{ background: '#F5F0E8', border: '1.5px dashed #D4CCC4' }}>
+                style={{ background: '#F5F0E8', border: '1.5px dashed #D4C9B0' }}>
                 + Chapter
               </button>
             )}

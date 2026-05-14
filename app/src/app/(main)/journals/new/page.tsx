@@ -151,7 +151,7 @@ export default function NewJournalPage() {
                     key={color.value}
                     type="button"
                     onClick={() => setCoverColor(color.value)}
-                    className="w-10 h-10 flex-shrink-0 transition-transform hover:-translate-y-0.5"
+                    className="w-11 h-11 flex-shrink-0 transition-transform hover:-translate-y-0.5"
                     style={{
                       background: color.value,
                       border: coverColor === color.value ? `3px solid ${color.dark}` : '3px solid transparent',

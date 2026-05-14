@@ -48,7 +48,7 @@ export default function NewScrapbookPage() {
   const [state, action] = useFormState(createScrapbook, undefined)
 
   return (
-    <div className="max-w-2xl mx-auto px-5 py-12">
+    <div className="max-w-2xl mx-auto px-4 sm:px-5 py-6 sm:py-12">
       {/* Back link */}
       <Link
         href={ROUTES.scrapbooks}
