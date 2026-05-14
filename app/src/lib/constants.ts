@@ -59,6 +59,9 @@ export const ROUTES = {
   journal:     (id: string) => `/journals/${id}`,
   newJournal:  '/journals/new',
   printJournal: (id: string) => `/journals/${id}/print`,
+  reels:       '/reels',
+  newReel:     '/reels/new',
+  reel:        (id: string) => `/reels/${id}`,
 } as const
 
 export const VISIBILITY_LABELS: Record<Visibility, string> = {

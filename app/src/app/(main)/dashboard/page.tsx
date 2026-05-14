@@ -185,6 +185,27 @@ export default async function DashboardPage() {
             </div>
           </Link>
 
+          {/* Create Reel CTA */}
+          <Link
+            href={ROUTES.newReel}
+            className="card p-5 flex items-center gap-3 hover:border-flame/30 hover:shadow-sm transition-all group"
+          >
+            <div
+              className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-ink text-white"
+              style={{ border: '2px solid #1C1917', boxShadow: '2px 2px 0 #1C1917' }}
+            >
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="9" />
+                <circle cx="12" cy="12" r="3" />
+                <path d="M12 3v2M12 19v2M3 12h2M19 12h2" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-ink group-hover:text-flame transition-colors">Create a reel</p>
+              <p className="text-xs text-ink-soft">Cinematic slideshow from photos</p>
+            </div>
+          </Link>
+
         </aside>
       </div>
     </div>

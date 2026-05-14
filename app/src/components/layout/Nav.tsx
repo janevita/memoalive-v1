@@ -83,6 +83,16 @@ function MemoriesIcon({ className }: { className?: string }) {
   )
 }
 
+function ReelIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 3v2M12 19v2M3 12h2M19 12h2" />
+    </svg>
+  )
+}
+
 function LogoMark() {
   return (
     <div
@@ -109,6 +119,7 @@ const desktopNavItems = [
   { href: ROUTES.memories,   label: 'Memories',   icon: MemoriesIcon },
   { href: ROUTES.scrapbooks, label: 'Scrapbooks', icon: ScrapbookIcon },
   { href: ROUTES.journals,   label: 'Journals',   icon: JournalIcon },
+  { href: ROUTES.reels,      label: 'Reels',      icon: ReelIcon },
   { href: ROUTES.profile,    label: 'Profile',    icon: UserIcon },
 ]
 
